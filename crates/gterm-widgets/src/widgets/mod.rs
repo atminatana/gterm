@@ -1,6 +1,7 @@
 //! Трейты виджетов (форма — как у ratatui, ADR-0023) и сами виджеты части 1: [`Block`],
 //! [`Paragraph`], [`List`], [`Table`], [`Popup`]; контролы (ADR-0026): [`Button`], состояния списка и таблицы; флажок [`Checkbox`] (ADR-0031);
-//! часть 2: [`Clear`], [`Gauge`], [`LineGauge`], [`Scrollbar`], контрол [`Tabs`] (ADR-0032).
+//! часть 2: [`Clear`], [`Gauge`], [`LineGauge`], [`Scrollbar`], контрол [`Tabs`] (ADR-0032);
+//! индикатор уровня [`Meter`] (ADR-0034).
 
 use gterm::buffer::ScreenBuffer;
 
@@ -13,6 +14,7 @@ mod clear;
 mod combo_box;
 mod gauge;
 mod list;
+mod meter;
 mod paragraph;
 mod popup;
 mod scrollbar;
@@ -28,6 +30,7 @@ pub use clear::Clear;
 pub use combo_box::{ComboBox, ComboBoxState};
 pub use gauge::{Gauge, LineGauge};
 pub use list::{List, ListItem, ListState};
+pub use meter::Meter;
 pub use paragraph::{Paragraph, Wrap};
 pub use popup::Popup;
 pub use scrollbar::{Scrollbar, ScrollbarOrientation, ScrollbarState};

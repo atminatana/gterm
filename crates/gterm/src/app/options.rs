@@ -2,6 +2,7 @@
 //! [`AppError`], чистые [`auto_grid`] и [`centered_origin`].
 
 use std::fmt;
+use std::time::Duration;
 
 use crate::font::{FONT_SIZE_PX, FontError};
 use crate::renderer::RenderError;
@@ -88,6 +89,11 @@ pub struct AppOptions {
 	/// Логический размер шрифта, px при `scale_factor = 1` (FR-8, ADR-0008 п.8); физический —
 	/// `glyph_px_for(font_size_px, FONT_SCALE, scale_factor)`.
 	pub font_size_px: u16,
+	/// Период тика приложения (ADR-0033): с ним библиотека зовёт
+	/// [`AppHandler::on_tick`](super::AppHandler::on_tick) без пользовательского ввода. `None` —
+	/// тика нет, цикл в простое не просыпается. Меняется на лету через
+	/// [`Request::tick_period`](super::Request::tick_period).
+	pub tick_period: Option<Duration>,
 }
 
 impl Default for AppOptions {
@@ -97,6 +103,7 @@ impl Default for AppOptions {
 			resizable: true,
 			vsync: true,
 			font_size_px: FONT_SIZE_PX,
+			tick_period: None,
 		}
 	}
 }

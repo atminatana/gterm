@@ -1,9 +1,11 @@
 //! События `winit` (ADR-0004): уведомления приложения, применение [`Request`], обработчик цикла.
 
+use std::time::Instant;
+
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalPosition;
 use winit::event::{Ime, WindowEvent};
-use winit::event_loop::ActiveEventLoop;
+use winit::event_loop::{ActiveEventLoop, ControlFlow};
 use winit::window::{Fullscreen, WindowId};
 
 use super::{App, AppHandler, Ctx, Grid, GridMode, PointerEvent, Request};
@@ -104,6 +106,21 @@ impl ApplicationHandler for App {
 			_ => {}
 		}
 	}
+
+	/// Тик приложения (ADR-0033). Срок проверяется здесь, перед каждым ожиданием, а не по причине
+	/// пробуждения: так тик приходит и тогда, когда цикл занят вводом или кадрами.
+	fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+		// До создания окна и после запроса выхода тиков нет.
+		if self.window.is_none() || event_loop.exiting() {
+			return;
+		}
+		self.run_due_tick(event_loop);
+		let control_flow = match self.ticker.deadline() {
+			Some(deadline) => ControlFlow::WaitUntil(deadline),
+			None => ControlFlow::Wait,
+		};
+		event_loop.set_control_flow(control_flow);
+	}
 }
 
 impl App {
@@ -132,7 +149,20 @@ impl App {
 		request
 	}
 
-	/// Применить команды приложения: сетка, полный экран, бэкенд, перерисовка, выход.
+	/// Вызвать `on_tick`, если срок наступил. Следующий срок отсчитывается после возврата из
+	/// обработчика, поэтому пропущенные тики не догоняются; смена периода в самом обработчике
+	/// применяется следом и отсчёт не сбивает.
+	fn run_due_tick(&mut self, event_loop: &ActiveEventLoop) {
+		self.ticker.start(Instant::now());
+		if !self.ticker.is_due(Instant::now()) {
+			return;
+		}
+		let request = self.notify(|handler, ctx| handler.on_tick(ctx));
+		self.ticker.restart(Instant::now());
+		self.apply_request(&request, event_loop);
+	}
+
+	/// Применить команды приложения: сетка, полный экран, бэкенд, период тика, перерисовка, выход.
 	pub(super) fn apply_request(&mut self, request: &Request, event_loop: &ActiveEventLoop) {
 		// Сетку задаёт приложение только в `FixedGrid`: в `AutoGrid` она выводится из окна, и
 		// следующая же перерисовка по размеру окна вернула бы заданное значение обратно (FR-23).
@@ -167,6 +197,9 @@ impl App {
 				}
 			}
 			self.request_redraw();
+		}
+		if let Some(period) = request.tick_period {
+			self.ticker.set_period(period, Instant::now());
 		}
 		if request.redraw {
 			self.request_redraw();

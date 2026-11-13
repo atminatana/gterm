@@ -1,7 +1,7 @@
 //! Экран из виджетов `gterm-widgets` (ADR-0023, ADR-0026, ADR-0029) на системном моноширинном шрифте, без
 //! `assets/`: сверху вкладки (ADR-0032; `←`/`→` под фокусом или клик), на первой — слева список
 //! в группе с подсветкой рамки и полосой прокрутки (мышь: стрелки и дорожка с повтором при удержании, ползунок, колесо), справа таблица с такой же полосой, абзац с переносом и кнопка,
-//! на второй — индикаторы `Gauge` и `LineGauge`; снизу индикатор позиции в списке и подсказка.
+//! на второй — индикаторы `Gauge`, `LineGauge` и `Meter` (ADR-0034); снизу индикатор позиции в списке и подсказка.
 //! Экран описан один раз — `Demo::ui()`: дерево раскладывает, рисует,
 //! водит фокус по `Tab`/`Shift+Tab`, доставляет клавиши и мышь контролам и отдаёт сообщения
 //! `Msg`, которые приложение разбирает в `update`. `P` и кнопка открывают модальное окно с
@@ -24,8 +24,8 @@ use gterm::font::{FONT_SCALE, FontFamily, glyph_px_for};
 use gterm::hotkey::HotkeyTracker;
 use gterm::rasterizer::Rasterizer;
 use gterm_widgets::widgets::{
-	Block, BorderType, Button, ButtonState, Gauge, LineGauge, List, ListState, Padding, Paragraph,
-	Row, Scrollbar, ScrollbarOrientation, Table, TableState, Tabs, TabsState, Wrap,
+	Block, BorderType, Button, ButtonState, Gauge, LineGauge, List, ListState, Meter, Padding,
+	Paragraph, Row, Scrollbar, ScrollbarOrientation, Table, TableState, Tabs, TabsState, Wrap,
 };
 use gterm_widgets::{Constraint, HotkeyMap, Layout, Line, Modal, Rect, Span, Style, Text, Ui};
 use winit::event::{ElementState, KeyEvent};
@@ -42,6 +42,14 @@ const DIM: Color = Color::from_rgb(0x80, 0x80, 0x80);
 const SELECTED_BG: Color = Color::from_rgb(0x2A, 0x4A, 0x7A);
 /// Фон модального окна — непрозрачный: окно закрывает экран под собой (ТЗ 2026-10-30 п. 9).
 const DIALOG_BG: Color = Color::from_rgb(0x30, 0x20, 0x50);
+/// Зоны индикатора уровня (ADR-0034): норма, предупреждение, перегрузка.
+const METER_ZONES: [(f64, Style); 3] = [
+	(0.0, Style::new().fg(Color::from_rgb(0x30, 0xC0, 0x50))),
+	(0.7, Style::new().fg(Color::from_rgb(0xF0, 0xC0, 0x30))),
+	(0.9, Style::new().fg(Color::from_rgb(0xE0, 0x40, 0x40))),
+];
+/// Насколько отметка пика в примере опережает уровень.
+const METER_PEAK_LEAD: f64 = 0.15;
 
 const ITEMS: [&str; 14] = [
 	"Квадранты",
@@ -67,7 +75,9 @@ const LOREM: &str = "Виджеты рисуют себя в ScreenBuffer вну
 
 const INDICATORS: &str = "Gauge заливает полосу на долю с точностью до восьмой части ячейки — \
 блоки-восьмушки рисуются процедурно и от шрифта не зависят. LineGauge — та же доля линией в одну \
-строку. Оба показывают позицию выделения в списке с первой вкладки; полоса прокрутки рядом со \
+строку. Meter — уровень с точностью до половины ячейки: цвет ячейки задаёт её место на шкале, \
+отдельная ячейка — отметка пика. Все три показывают позицию выделения в списке с первой \
+вкладки; полоса прокрутки рядом со \
 списком — его смещение. Вернитесь на первую вкладку (← под фокусом на вкладках) и подвигайте \
 выделение.";
 
@@ -273,6 +283,8 @@ impl Demo {
 					Constraint::Length(1),
 					Constraint::Length(1),
 					Constraint::Length(1),
+					Constraint::Length(1),
+					Constraint::Length(1),
 					Constraint::Fill(1),
 				]),
 				vec![
@@ -292,6 +304,14 @@ impl Demo {
 							.ratio(ratio)
 							.label(format!(" LineGauge — {selected}:"))
 							.filled_style(focus)
+							.unfilled_style(dim_border),
+					),
+					Ui::widget(Paragraph::new("")),
+					Ui::widget(
+						Meter::new()
+							.ratio(ratio)
+							.peak(Some(ratio + METER_PEAK_LEAD))
+							.zones(&METER_ZONES)
 							.unfilled_style(dim_border),
 					),
 					Ui::widget(Paragraph::new("")),

@@ -14,6 +14,7 @@ mod chain;
 mod events;
 mod frame;
 mod options;
+mod tick;
 mod window;
 
 pub use api::{AppHandler, Ctx, DrawCtx, FrameStats, PointerEvent, Request};
@@ -33,6 +34,7 @@ use crate::rasterizer::Rasterizer;
 use crate::renderer::RendererKind;
 
 use backend::Backend;
+use tick::Ticker;
 
 /// Окно с сеткой; бэкенд выбирается при создании окна и может смениться во время работы.
 pub struct App {
@@ -65,6 +67,8 @@ pub struct App {
 	is_context_loss_pending: bool,
 	/// Статистика кадров для приложения (ADR-0006).
 	stats: FrameStats,
+	/// Период и срок тика приложения (ADR-0033).
+	ticker: Ticker,
 	/// Наложение текущего кадра (ADR-0014): заполняется в `on_redraw`, очищается перед ним.
 	overlay: Overlay,
 	/// Ошибка, из-за которой цикл остановлен; возвращается из `run`.
@@ -106,6 +110,7 @@ impl App {
 			frames_to_fail,
 			is_context_loss_pending,
 			stats: FrameStats::default(),
+			ticker: Ticker::new(options.tick_period),
 			overlay: Overlay::new(),
 			error: None,
 			is_redraw_requested: false,
@@ -117,6 +122,7 @@ impl App {
 	/// Возвращается после закрытия окна или `ctx.exit()`.
 	pub fn run(mut self, handler: impl AppHandler + 'static) -> Result<(), AppError> {
 		let event_loop = EventLoop::new().map_err(AppError::EventLoop)?;
+		// Режим ожидания при заданном периоде тика меняет `about_to_wait` (ADR-0033).
 		event_loop.set_control_flow(ControlFlow::Wait);
 		self.handler = Some(Box::new(handler));
 		let result = event_loop.run_app(&mut self).map_err(AppError::EventLoop);

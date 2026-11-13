@@ -28,9 +28,11 @@ application writes cells into a `ScreenBuffer` and receives keyboard and mouse e
 - **Fast Software renderer.** Only changed rows are redrawn; rendering runs in a thread pool and
   allocates nothing per frame.
 - **Key combinations.** A tracker for chords and sequences such as `Ctrl+K`, `Ctrl+[K,U]`.
+- **Application tick.** With a period set, the library calls `on_tick` without user input — for
+  meters and timers; with no period the idle loop never wakes up.
 - **Widgets** (separate crate `gterm-widgets`), immediate mode in the style of ratatui: `Block`,
-  `Paragraph`, `List`, `Table`, `Tabs`, `Gauge`, `LineGauge`, `Scrollbar`, `Popup`, `Button`,
-  `Checkbox`, `TextInput`, `ComboBox`; layout, focus ring, mouse, modal layers, a hotkey map and
+  `Paragraph`, `List`, `Table`, `Tabs`, `Gauge`, `LineGauge`, `Meter`, `Scrollbar`, `Popup`,
+  `Button`, `Checkbox`, `TextInput`, `ComboBox`; layout, focus ring, mouse, modal layers, a hotkey map and
   the clipboard.
 
 ## Crates

@@ -16,7 +16,7 @@ const FULL_BLOCK: char = '█';
 /// (U+2589 — 7/8 … U+258F — 1/8). Все они рисуются процедурно (ADR-0022) и от шрифта не зависят.
 const EIGHTHS_END: u32 = 0x2590;
 
-fn clamp_ratio(ratio: f64) -> f64 {
+pub(super) fn clamp_ratio(ratio: f64) -> f64 {
 	if ratio.is_nan() {
 		0.0
 	} else {
@@ -30,7 +30,7 @@ fn percent_label(ratio: f64) -> String {
 }
 
 /// Область внутри блока; сам блок при этом рисуется.
-fn render_block(block: Option<&Block<'_>>, area: Rect, buf: &mut ScreenBuffer) -> Rect {
+pub(super) fn render_block(block: Option<&Block<'_>>, area: Rect, buf: &mut ScreenBuffer) -> Rect {
 	match block {
 		Some(block) => {
 			let inner = block.inner(area);

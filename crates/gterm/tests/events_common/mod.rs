@@ -4,28 +4,24 @@
 //! Живёт в отдельном модуле, потому что `winit` запрещает создавать второй цикл событий в
 //! процессе: каждый режим сетки (FR-23) проверяется отдельным тест-бинарником со своим `main`.
 
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex};
-use std::time::Duration;
+mod launch;
 
-use gterm::app::{App, AppError, AppHandler, AppOptions, Ctx, DrawCtx, Grid, GridMode};
+use std::sync::{Arc, Mutex};
+
+use gterm::app::{AppError, AppHandler, AppOptions, Ctx, DrawCtx, Grid, GridMode};
 use gterm::buffer::ScreenBuffer;
 use gterm::cell::{CellFlags, Color};
 use gterm::config::Config;
-use gterm::font::FontFamily;
-use gterm::rasterizer::{BoxDrawingMode, Rasterizer};
+use gterm::rasterizer::BoxDrawingMode;
 use gterm::renderer::RendererKind;
 
 /// Метка в левом верхнем углу: обязана пережить смену сетки (FR-6, FR-23).
 pub const MARKER: char = 'X';
 /// Сетка, которую приложение просит при первом уведомлении.
 pub const WANTED: Grid = Grid { cols: 40, rows: 12 };
-/// Сколько кадров рисуем до выхода: таймера в библиотеке нет, цикл ведёт само приложение,
+/// Сколько кадров рисуем до выхода: тик приложение-испытатель не заводит, цикл ведёт оно само,
 /// запрашивая следующий кадр из `on_frame` (ADR-0006) — как замер `--bench`.
 pub const FRAMES_BEFORE_EXIT: u64 = 5;
-/// Сторож: столько без выхода — процесс завершается с ошибкой, чтобы тест упал, а не завис.
-/// Кадры с ошибками и откат бэкенда бывают медленными, поэтому запас большой.
-const WATCHDOG: Duration = Duration::from_secs(60);
 
 /// Что приложение узнало за время работы окна.
 #[derive(Default, Debug)]
@@ -156,23 +152,11 @@ pub struct Finished {
 
 /// Один запуск приложения на настоящем окне: журнал и то, чем закончился `App::run`.
 /// `None` — окно недоступно, это пропуск.
-///
-/// Имя семейства шрифта репозитория — как `common::REPO_FONT_FAMILY`; оконные бинарники
-/// модуль `common` не подключают.
-const REPO_FONT_FAMILY: &str = "RobotoMono Nerd Font Mono";
-
-/// Каталог шрифтов репозитория (пакет `gterm-demo`).
-fn repo_fonts_dir() -> PathBuf {
-	Path::new(env!("CARGO_MANIFEST_DIR")).join("../gterm-demo/assets/fonts")
-}
-
-/// Шрифт берётся из репозитория: сцена не про его поиск, а `assets/` в тестах есть всегда.
 pub fn run_to_end(
 	config: Config,
 	grid_mode: GridMode,
 	switch_at_frame: Option<u64>,
 ) -> Option<Finished> {
-	start_watchdog();
 	let log = Arc::new(Mutex::new(Log::default()));
 	let probe = Probe {
 		log: Arc::clone(&log),
@@ -185,18 +169,8 @@ pub fn run_to_end(
 		vsync: true,
 		..AppOptions::default()
 	};
-	let rasterizer = Rasterizer::new(
-		FontFamily::load(&repo_fonts_dir(), REPO_FONT_FAMILY).expect("шрифт из репозитория"),
-	)
-	.expect("растеризатор");
-	let app = App::new("gterm test", start_screen(), rasterizer, config, options);
-	match app.run(probe) {
-		Err(AppError::EventLoop(e)) => {
-			eprintln!("application test skipped: no event loop ({e})");
-			None
-		}
-		result => Some(Finished { log, result }),
-	}
+	let result = launch::run_handler(probe, start_screen(), config, options)?;
+	Some(Finished { log, result })
 }
 
 /// Цикл не завис: приложение получило все кадры, которые просило до выхода.
@@ -241,14 +215,4 @@ fn start_screen() -> ScreenBuffer {
 	screen.set_cell(0, 0, MARKER, Color::WHITE, Color::BLACK, CellFlags::empty());
 	screen.write_row(1, "текст", Color::GREEN, Color::BLACK);
 	screen
-}
-
-/// Завершить процесс с ошибкой, если цикл не закончился за [`WATCHDOG`]: без таймера библиотека
-/// сама цикл не будит, и зависание иначе выглядело бы как бесконечный тест.
-fn start_watchdog() {
-	std::thread::spawn(|| {
-		std::thread::sleep(WATCHDOG);
-		eprintln!("application test: no exit within {WATCHDOG:?}, the loop is stuck");
-		std::process::exit(1);
-	});
 }

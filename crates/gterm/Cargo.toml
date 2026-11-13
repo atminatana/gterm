@@ -62,3 +62,9 @@ harness = false
 [[test]]
 name = "stage8_faults"
 harness = false
+
+# Тик приложения (ADR-0033). Один цикл событий на процесс, поэтому бинарник запускает сам себя
+# по разу на сценарий.
+[[test]]
+name = "tick_events"
+harness = false
