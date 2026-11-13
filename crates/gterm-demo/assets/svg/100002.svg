@@ -1,0 +1,13 @@
+<!-- Тайл «стена» (U+100002): кирпичная кладка; швы — фон ячейки. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 20">
+  <rect x="0" y="0.5" width="4.5" height="4"/>
+  <rect x="5" y="0.5" width="5" height="4"/>
+  <rect x="0" y="5.5" width="2" height="4"/>
+  <rect x="2.5" y="5.5" width="5" height="4"/>
+  <rect x="8" y="5.5" width="2" height="4"/>
+  <rect x="0" y="10.5" width="4.5" height="4"/>
+  <rect x="5" y="10.5" width="5" height="4"/>
+  <rect x="0" y="15.5" width="2" height="4"/>
+  <rect x="2.5" y="15.5" width="5" height="4"/>
+  <rect x="8" y="15.5" width="2" height="4"/>
+</svg>

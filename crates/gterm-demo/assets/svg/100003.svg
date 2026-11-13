@@ -1,0 +1,5 @@
+<!-- Тайл «дерево» (U+100003): крона и ствол. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 20">
+  <circle cx="5" cy="7" r="4.5"/>
+  <rect x="4" y="11" width="2" height="7"/>
+</svg>

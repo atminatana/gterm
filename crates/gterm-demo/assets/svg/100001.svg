@@ -1,0 +1,5 @@
+<!-- Тайл «вода» (U+100001): три волны обводкой. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 20">
+  <path d="M0 5 Q2.5 3 5 5 T10 5 M0 11 Q2.5 9 5 11 T10 11 M0 17 Q2.5 15 5 17 T10 17"
+        fill="none" stroke="#000" stroke-width="1.2"/>
+</svg>

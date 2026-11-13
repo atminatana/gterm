@@ -1,0 +1,36 @@
+[package]
+name = "gterm-widgets"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Immediate-mode widgets and controls for gterm"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+gterm = { path = "../gterm", version = "0.1" }
+bitflags = "2"
+# Сообщения ввода несут типы `winit` без перевода (ADR-0004, ADR-0026); фичи те же, что у `gterm`,
+# новых транзитивных зависимостей нет.
+winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland", "wayland-dlopen"] }
+arboard = { version = "3.7", default-features = false, optional = true }
+
+# Экран из виджетов на системном шрифте (ADR-0023). Запуск из корня workspace:
+# `cargo run -p gterm-widgets --example widgets`.
+[[example]]
+name = "widgets"
+path = "examples/widgets.rs"
+
+# Форма: поля ввода, выпадающий список, кнопки (ADR-0027), системный буфер обмена (ADR-0030).
+# Запуск из корня workspace: `cargo run -p gterm-widgets --example widget_edit`.
+[[example]]
+name = "widget_edit"
+path = "examples/widget_edit.rs"
+required-features = ["system-clipboard"]
+
+[features]
+default = ["system-clipboard"]
+# Системный буфер обмена `SystemClipboard` (ADR-0030); без фичи остаются трейт `Clipboard` и
+# `MemoryClipboard`.
+system-clipboard = ["dep:arboard"]

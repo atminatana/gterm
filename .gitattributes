@@ -1,0 +1,6 @@
+# Переводы строк — свойство репозитория, не машины: LF везде, бинарники явно.
+* text=auto eol=lf
+*.bin binary
+*.ttf binary
+*.otf binary
+*.png binary

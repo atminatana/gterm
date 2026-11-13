@@ -1,0 +1,5 @@
+<!-- Тайл «трава» (U+100000): травинки обводкой. Цвет файла игнорируется — цвет задаёт ячейка. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 20">
+  <path d="M2 18 L3 13 M5 18 L5 12 M8 18 L7 14 M3 8 L4 4 M7 9 L7 5"
+        fill="none" stroke="#000" stroke-width="1" stroke-linecap="round"/>
+</svg>

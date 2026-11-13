@@ -1,0 +1,19 @@
+[package]
+name = "gterm-demo"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Demo binaries and assets for gterm"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+# Три бинарника (`demo`, `full_table`, `overlay`): без этого `cargo run -p gterm-demo` не знает,
+# какой запускать.
+default-run = "demo"
+
+[dependencies]
+gterm = { path = "../gterm", version = "0.1" }
+# Поиск каталога `assets/` рядом с exe (ТЗ FR-8.1) — обязанность демо, не библиотеки (ADR-0017).
+find_folder = "0.3.0"
+skrifa = { version = "0.47", default-features = false, features = ["std"] }
+winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland", "wayland-dlopen"] }

@@ -1,0 +1,64 @@
+[package]
+name = "gterm"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Cell-grid console window rendered by OpenGL or a CPU renderer with automatic fallback"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+
+[dependencies]
+bitflags = "2"
+glow = { version = "0.18", default-features = false }
+skrifa = { version = "0.47", default-features = false, features = ["std"] }
+zeno = { version = "0.3", default-features = false, features = ["eval", "std"] }
+# SVG-глифы (ADR-0008): только разбор в контуры; текст, системные шрифты и svgz не нужны,
+# растеризация — `zeno`.
+usvg = { version = "0.48", default-features = false }
+# Системные шрифты (ADR-0017): каталоги Windows/Linux и алиасы fontconfig; `memmap` — чтобы при
+# старте не читать каждый установленный шрифт целиком (`unsafe` отображения — внутри крейта).
+fontdb = { version = "0.24", default-features = false, features = ["fs", "memmap", "fontconfig"] }
+winit = { version = "0.30", default-features = false, features = ["rwh_06", "x11", "wayland", "wayland-dlopen"] }
+softbuffer = { version = "0.4", default-features = false, features = ["x11", "wayland", "wayland-dlopen"] }
+# Пул потоков Software (ADR-0016): постоянные потоки и `par_chunks_mut` без `unsafe` в проекте
+# (NFR-9) и без выделений памяти в кадре (NFR-6).
+rayon = { version = "1.12", default-features = false }
+glutin = { version = "0.32", default-features = false, features = ["egl", "glx", "wgl", "x11", "wayland"] }
+glutin-winit = { version = "0.5", default-features = false, features = ["egl", "glx", "wgl", "x11", "wayland"] }
+raw-window-handle = "0.6"
+
+# Минимальный потребитель библиотеки без `assets/` (ADR-0017, К13). Запуск из этого каталога:
+# `cargo run --example minimal`; из корня workspace: `cargo run -p gterm --example minimal`.
+[[example]]
+name = "minimal"
+path = "examples/minimal.rs"
+
+# Режимы псевдографики (ADR-0018): три таблицы, клавиши `1/2/3` — бэкенд, `q/w/e` — режим.
+[[example]]
+name = "pseudographica"
+path = "examples/pseudographica.rs"
+
+# Тесты этапа 6 создают цикл событий `winit`, который обязан жить на главном потоке, а `winit`
+# разрешает только один цикл на процесс. Поэтому у этих бинарников свой `main`, а режимы сетки
+# проверяются отдельными запусками.
+[[test]]
+name = "stage6_events"
+harness = false
+
+[[test]]
+name = "stage6_events_auto"
+harness = false
+
+[[test]]
+name = "stage6_fallback"
+harness = false
+
+# Этап 8: инжекция ошибок кадра (ADR-0007). Один цикл событий на процесс, поэтому бинарник
+# запускает сам себя по разу на сценарий.
+[[test]]
+name = "stage8_faults"
+harness = false

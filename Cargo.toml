@@ -1,0 +1,24 @@
+# Workspace (ADR-0017): библиотека `gterm` отдельно от демо-пакета `gterm-demo` с бинарниками
+# и `assets/`. `default-members` не задан: `cargo test` в корне гоняет оба пакета,
+# запуск демо — `cargo run --bin demo|full_table|overlay`.
+[workspace]
+members = ["crates/gterm", "crates/gterm-demo", "crates/gterm-widgets"]
+resolver = "3"
+
+# Общие поля пакетов: члены workspace наследуют их строками вида `license.workspace = true`.
+# Тексты лицензий — `LICENSE-MIT` и `LICENSE-APACHE` в корне.
+[workspace.package]
+authors = ["Korsakov Roman"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/atminatana/gterm"
+
+# ТЗ §10.2: профиль размера. В workspace Cargo читает профиль только из корневого манифеста.
+# `panic = "abort"` (NFR-8) делает `cargo test --release` непригодным — гейты гоняются в debug
+# (AGENTS.md).
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false
