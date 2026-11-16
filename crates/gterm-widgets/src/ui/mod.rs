@@ -51,6 +51,9 @@ struct Hotkeys<'a, M> {
 struct Node<'a, M> {
 	parent: Option<usize>,
 	kind: Kind<'a, M>,
+	/// Привязка двойного клика (ADR-0035): у узла, а не у элемента, — так она есть у любого
+	/// контрола, встроенного и своего.
+	on_double_click: Option<M>,
 }
 
 enum Kind<'a, M> {
@@ -68,7 +71,11 @@ enum Kind<'a, M> {
 impl<'a, M: 'a> Ui<'a, M> {
 	fn single(kind: Kind<'a, M>) -> Self {
 		Self {
-			nodes: vec![Node { parent: None, kind }],
+			nodes: vec![Node {
+				parent: None,
+				kind,
+				on_double_click: None,
+			}],
 			areas: Vec::new(),
 			modal: None,
 			hotkeys: None,
@@ -204,6 +211,20 @@ impl<'a, M: 'a> Ui<'a, M> {
 	pub fn on_toggle(mut self, to_message: impl Fn(bool) -> M + 'a) -> Self {
 		if let Kind::Element(element) = &mut self.nodes[0].kind {
 			element.bind_toggle(Box::new(to_message));
+		}
+		self
+	}
+
+	/// Сообщение на двойной клик по контролу (ADR-0035) — любому: встроенному ([`Ui::stateful`]),
+	/// своему ([`Ui::control`]) или принадлежащему описанию ([`Ui::owned`]); у контейнеров и
+	/// листов без состояния не действует. Публикуется после того, как второе нажатие доставлено
+	/// контролу как обычное (первое тоже было обычным кликом), если контрол принимает двойной
+	/// клик в этом месте ([`Control::accepts_double_click`]).
+	pub fn on_double_click(mut self, message: M) -> Self {
+		if let Kind::Element(element) = &self.nodes[0].kind {
+			if element.node().is_some() {
+				self.nodes[0].on_double_click = Some(message);
+			}
 		}
 		self
 	}

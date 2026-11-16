@@ -5,6 +5,8 @@
 //! приложению без сообщений от дерева. Карта сочетаний (ADR-0029): каждое событие клавиши
 //! кормит трекер, непринятое нажатие сопоставляется с картой слоя либо экрана. Команды правки
 //! (ADR-0030) распознаются по физической клавише и идут контролу под фокусом раньше клавиши.
+//! Двойной клик (ADR-0035): второе нажатие доставляется контролу как обычное, затем — сообщение
+//! привязки узла `on_double_click`, если контрол принимает двойной клик в этом месте.
 
 use std::time::Instant;
 
@@ -13,7 +15,7 @@ use gterm::hotkey::Key;
 use winit::event::{ElementState, KeyEvent};
 use winit::keyboard::NamedKey;
 
-use super::Ui;
+use super::{Kind, Ui};
 use crate::clipboard::{Clipboard, EditCommand, NoClipboard};
 use crate::geometry::Rect;
 use crate::input::{Handled, KeyMsg, Messages, MouseKind, MouseMsg, Routed};
@@ -191,11 +193,36 @@ impl<'a, M: 'a> Ui<'a, M> {
 		if msg.is_left_down() && self.element_mut(target).focusable() {
 			self.focus_at(target);
 		}
+		// Место проверяется до доставки: контрол судит по виду, который видел пользователь.
+		let is_double_click = self.is_double_click_on(target, msg);
 		let handled = self.element_mut(target).mouse(msg, &mut out);
 		if msg.kind == MouseKind::Down && handled.is_yes() {
 			self.set_captured(target, true);
 		}
-		Routed::new(handled, out)
+		if !is_double_click {
+			return Routed::new(handled, out);
+		}
+		// Сообщение переносится, а не клонируется: описание живёт одно событие (как `on_activate`).
+		match self.nodes[target].on_double_click.take() {
+			Some(message) => {
+				out.push(message);
+				Routed::new(Handled::Yes, out)
+			}
+			None => Routed::new(handled, out),
+		}
+	}
+
+	/// Второе нажатие двойного клика по контролу с привязкой, и контрол принимает его в этом месте
+	/// (ADR-0035).
+	fn is_double_click_on(&self, target: usize, msg: &MouseMsg) -> bool {
+		let node = &self.nodes[target];
+		if !msg.is_double_click() || node.on_double_click.is_none() {
+			return false;
+		}
+		match &node.kind {
+			Kind::Element(element) => element.accepts_double_click(msg),
+			Kind::Container { .. } => false,
+		}
 	}
 
 	/// Такт времени (поправка ADR-0032): из `AppHandler::on_frame` с `Instant::now()`. Идёт

@@ -198,6 +198,15 @@ impl<M> Control<M> for ListState {
 			None => Handled::No,
 		}
 	}
+
+	/// Двойной клик — только по пункту (ADR-0035): полоса прокрутки и пустые строки не в счёт.
+	fn accepts_double_click(&self, msg: &MouseMsg) -> bool {
+		!self.scroll.contains(msg)
+			&& self
+				.rows
+				.item_at(self.node.area, msg.col, msg.row)
+				.is_some()
+	}
 }
 
 impl WidgetEvents for ListState {

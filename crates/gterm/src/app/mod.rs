@@ -11,6 +11,7 @@
 mod api;
 mod backend;
 mod chain;
+mod clicks;
 mod events;
 mod frame;
 mod options;
@@ -34,6 +35,7 @@ use crate::rasterizer::Rasterizer;
 use crate::renderer::RendererKind;
 
 use backend::Backend;
+use clicks::ClickCounter;
 use tick::Ticker;
 
 /// Окно с сеткой; бэкенд выбирается при создании окна и может смениться во время работы.
@@ -59,6 +61,8 @@ pub struct App {
 	pointer: PhysicalPosition<f64>,
 	/// Последнее состояние модификаторов (`WindowEvent::ModifiersChanged`) для [`Ctx::modifiers`].
 	modifiers: ModifiersState,
+	/// Нажатия кнопок мыши подряд для `PointerEvent::Input::click_count` (ADR-0035).
+	clicks: ClickCounter,
 	/// Кадр уже повторяли после ошибки (§5.3 п.5): следующая ошибка — откат.
 	frame_retried: bool,
 	/// Сколько попыток кадра ещё завершить ошибкой (`--fail-frames`, ADR-0007).
@@ -106,6 +110,7 @@ impl App {
 			glyph_px,
 			pointer: PhysicalPosition::new(0.0, 0.0),
 			modifiers: ModifiersState::empty(),
+			clicks: ClickCounter::default(),
 			frame_retried: false,
 			frames_to_fail,
 			is_context_loss_pending,

@@ -45,11 +45,13 @@ fn input_maps_pressed_and_released_with_button_and_modifiers() {
 		state: ElementState::Pressed,
 		button: MouseButton::Left,
 		cell: (1, 0),
+		click_count: 1,
 	};
 	let up = PointerEvent::Input {
 		state: ElementState::Released,
 		button: MouseButton::Right,
 		cell: (-1, 7),
+		click_count: 1,
 	};
 	let (down, up) = with_ctx(ModifiersState::SHIFT, |ctx| {
 		(
@@ -66,6 +68,46 @@ fn input_maps_pressed_and_released_with_button_and_modifiers() {
 	assert!(!up.is_left_down());
 	// Ячейка вне сетки передаётся как есть — решает дерево.
 	assert_eq!((up.col, up.row), (-1, 7));
+}
+
+#[test]
+fn click_count_passes_through_and_marks_a_left_double_click() {
+	let input = |state, button, click_count| PointerEvent::Input {
+		state,
+		button,
+		cell: (2, 1),
+		click_count,
+	};
+	let moved = PointerEvent::Moved {
+		position: PhysicalPosition::new(0.0, 0.0),
+		delta: PhysicalPosition::new(0.0, 0.0),
+		cell: (2, 1),
+	};
+	let msgs = with_ctx(ModifiersState::empty(), |ctx| {
+		[
+			input(ElementState::Pressed, MouseButton::Left, 1),
+			input(ElementState::Pressed, MouseButton::Left, 2),
+			input(ElementState::Released, MouseButton::Left, 2),
+			input(ElementState::Pressed, MouseButton::Right, 2),
+			moved,
+			PointerEvent::Left,
+		]
+		.map(|event| MouseMsg::from_pointer(&event, ctx))
+	});
+	let counts = msgs.map(|msg| (msg.click_count, msg.is_double_click()));
+	assert_eq!(
+		counts,
+		[
+			(1, false),
+			(2, true),
+			// Двойной клик — только нажатие левой кнопки.
+			(2, false),
+			(2, false),
+			// У движения и отмены число нажатий — 0.
+			(0, false),
+			(0, false),
+		]
+	);
 }
 
 #[test]
@@ -110,6 +152,7 @@ fn translated_shifts_into_a_local_frame() {
 		col: 12,
 		row: 5,
 		modifiers: ModifiersState::empty(),
+		click_count: 1,
 	};
 	let local = msg.translated(10, 6);
 	assert_eq!((local.col, local.row), (2, -1));

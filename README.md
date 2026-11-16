@@ -33,7 +33,8 @@ application writes cells into a `ScreenBuffer` and receives keyboard and mouse e
 - **Widgets** (separate crate `gterm-widgets`), immediate mode in the style of ratatui: `Block`,
   `Paragraph`, `List`, `Table`, `Tabs`, `Gauge`, `LineGauge`, `Meter`, `Scrollbar`, `Popup`,
   `Button`, `Checkbox`, `TextInput`, `ComboBox`; layout, focus ring, mouse, modal layers, a hotkey map and
-  the clipboard.
+  the clipboard. A double click on any control is bound to a message like a button click
+  (`on_double_click`); the window counts the presses, controls need no clock.
 
 ## Crates
 

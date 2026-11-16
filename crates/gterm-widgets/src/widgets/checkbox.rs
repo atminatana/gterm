@@ -135,6 +135,11 @@ impl<M> Control<M> for CheckboxState {
 			_ => Handled::No,
 		}
 	}
+
+	/// Неактивный флажок ввода не принимает — и двойного клика тоже (ADR-0035).
+	fn accepts_double_click(&self, _msg: &MouseMsg) -> bool {
+		self.enabled
+	}
 }
 
 impl WidgetEvents for CheckboxState {

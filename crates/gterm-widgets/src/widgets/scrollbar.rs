@@ -225,6 +225,12 @@ impl BarState {
 		)
 	}
 
+	/// Лежит ли ячейка сообщения на полосе последней отрисовки.
+	pub(crate) fn contains(&self, msg: &MouseMsg) -> bool {
+		self.layout
+			.is_some_and(|layout| layout.part_at(msg.col, msg.row).is_some())
+	}
+
 	/// Левое нажатие: новое смещение, если нажатие пришлось на полосу (стрелка — на элемент,
 	/// дорожка — на страницу, ползунок — начало протяжки, смещение прежнее); `None` — мимо.
 	pub(crate) fn press(&mut self, msg: &MouseMsg, offset: usize) -> Option<usize> {

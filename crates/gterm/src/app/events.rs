@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalPosition;
-use winit::event::{Ime, WindowEvent};
+use winit::event::{ElementState, Ime, WindowEvent};
 use winit::event_loop::{ActiveEventLoop, ControlFlow};
 use winit::window::{Fullscreen, WindowId};
 
@@ -73,12 +73,18 @@ impl ApplicationHandler for App {
 			}
 			WindowEvent::MouseInput { state, button, .. } => {
 				let cell = self.pointer_cell();
+				// Нажатия подряд считает окно (ADR-0035): контролам часы не нужны.
+				let click_count = match state {
+					ElementState::Pressed => self.clicks.press(button, cell, Instant::now()),
+					ElementState::Released => self.clicks.release(button),
+				};
 				let request = self.notify(|handler, ctx| {
 					handler.on_pointer(
 						&PointerEvent::Input {
 							state,
 							button,
 							cell,
+							click_count,
 						},
 						ctx,
 					)

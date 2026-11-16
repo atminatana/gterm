@@ -76,6 +76,9 @@ pub struct MouseMsg {
 	pub col: i32,
 	pub row: i32,
 	pub modifiers: ModifiersState,
+	/// Номер нажатия подряд из `PointerEvent::Input` (ADR-0035): у `Down`/`Up` — 1 или 2
+	/// (двойной клик левой кнопкой), у движения, колеса и отмены — 0.
+	pub click_count: u8,
 }
 
 impl MouseMsg {
@@ -83,19 +86,19 @@ impl MouseMsg {
 	/// для попиксельной прокрутки — из `Ctx`. У ухода указателя координат нет — `(-1, -1)`.
 	pub fn from_pointer(event: &PointerEvent<'_>, ctx: &Ctx<'_>) -> Self {
 		let modifiers = ctx.modifiers;
-		let (kind, button, (col, row)) = match *event {
-			PointerEvent::Moved { cell, .. } => (MouseKind::Move, None, cell),
+		let (kind, button, (col, row), click_count) = match *event {
+			PointerEvent::Moved { cell, .. } => (MouseKind::Move, None, cell, 0),
 			PointerEvent::Input {
 				state,
 				button,
 				cell,
-				..
+				click_count,
 			} => {
 				let kind = match state {
 					ElementState::Pressed => MouseKind::Down,
 					ElementState::Released => MouseKind::Up,
 				};
-				(kind, Some(button), cell)
+				(kind, Some(button), cell, click_count)
 			}
 			PointerEvent::Wheel { delta, cell } => {
 				let lines = match *delta {
@@ -104,9 +107,9 @@ impl MouseMsg {
 						(px.y / f64::from(ctx.cell_px.1.max(1))) as f32
 					}
 				};
-				(MouseKind::Wheel { lines }, None, cell)
+				(MouseKind::Wheel { lines }, None, cell, 0)
 			}
-			PointerEvent::Left => (MouseKind::Cancel, None, (-1, -1)),
+			PointerEvent::Left => (MouseKind::Cancel, None, (-1, -1), 0),
 		};
 		Self {
 			kind,
@@ -114,6 +117,7 @@ impl MouseMsg {
 			col,
 			row,
 			modifiers,
+			click_count,
 		}
 	}
 
@@ -129,6 +133,11 @@ impl MouseMsg {
 	/// Нажатие левой кнопки.
 	pub fn is_left_down(&self) -> bool {
 		self.kind == MouseKind::Down && self.button == Some(MouseButton::Left)
+	}
+
+	/// Второе нажатие двойного клика левой кнопкой (ADR-0035).
+	pub fn is_double_click(&self) -> bool {
+		self.is_left_down() && self.click_count == 2
 	}
 }
 

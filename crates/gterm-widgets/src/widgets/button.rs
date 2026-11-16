@@ -108,6 +108,11 @@ impl<M> Control<M> for ButtonState {
 			_ => Handled::No,
 		}
 	}
+
+	/// Неактивная кнопка ввода не принимает — и двойного клика тоже (ADR-0035).
+	fn accepts_double_click(&self, _msg: &MouseMsg) -> bool {
+		self.enabled
+	}
 }
 
 impl WidgetEvents for ButtonState {

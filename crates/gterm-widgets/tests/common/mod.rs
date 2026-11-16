@@ -178,18 +178,38 @@ pub fn key_msg<'a>(key: &'a Key, modifiers: ModifiersState) -> KeyMsg<'a> {
 	}
 }
 
+/// Сообщение мыши без модификаторов; у нажатия и отпускания — первое нажатие подряд, у
+/// остального — 0, как у `MouseMsg::from_pointer`.
 pub fn mouse(kind: MouseKind, button: Option<MouseButton>, col: i32, row: i32) -> MouseMsg {
+	let click_count = u8::from(matches!(kind, MouseKind::Down | MouseKind::Up));
 	MouseMsg {
 		kind,
 		button,
 		col,
 		row,
 		modifiers: ModifiersState::empty(),
+		click_count,
 	}
 }
 
 pub fn left_down(col: i32, row: i32) -> MouseMsg {
 	mouse(MouseKind::Down, Some(MouseButton::Left), col, row)
+}
+
+/// Второе нажатие двойного клика левой кнопкой (ADR-0035).
+pub fn left_double_down(col: i32, row: i32) -> MouseMsg {
+	MouseMsg {
+		click_count: 2,
+		..left_down(col, row)
+	}
+}
+
+/// Отпускание после второго нажатия двойного клика.
+pub fn left_double_up(col: i32, row: i32) -> MouseMsg {
+	MouseMsg {
+		click_count: 2,
+		..left_up(col, row)
+	}
 }
 
 pub fn left_up(col: i32, row: i32) -> MouseMsg {

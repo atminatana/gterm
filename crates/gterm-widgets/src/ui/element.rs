@@ -19,6 +19,12 @@ pub(super) trait Element<'a, M> {
 	fn focusable(&self) -> bool;
 	fn key(&mut self, msg: &KeyMsg<'_>, out: &mut Messages<M>) -> Handled;
 	fn mouse(&mut self, msg: &MouseMsg, out: &mut Messages<M>) -> Handled;
+	/// Принимает ли контрол двойной клик в месте нажатия (ADR-0035); у листа без состояния —
+	/// нет.
+	fn accepts_double_click(&self, msg: &MouseMsg) -> bool {
+		let _ = msg;
+		false
+	}
 	fn text(&mut self, text: &str, out: &mut Messages<M>) -> Handled;
 	/// Команда правки контролу (ADR-0030); у листа без состояния не действует.
 	fn edit(
@@ -119,6 +125,10 @@ impl<M, C: Control<M> + Drawable> Element<'_, M> for Custom<'_, C> {
 		self.control.mouse(msg, out)
 	}
 
+	fn accepts_double_click(&self, msg: &MouseMsg) -> bool {
+		self.control.accepts_double_click(msg)
+	}
+
 	fn text(&mut self, text: &str, out: &mut Messages<M>) -> Handled {
 		self.control.text(text, out)
 	}
@@ -171,6 +181,10 @@ impl<M, C: Control<M> + Drawable> Element<'_, M> for Owned<C> {
 
 	fn mouse(&mut self, msg: &MouseMsg, out: &mut Messages<M>) -> Handled {
 		self.control.mouse(msg, out)
+	}
+
+	fn accepts_double_click(&self, msg: &MouseMsg) -> bool {
+		self.control.accepts_double_click(msg)
 	}
 
 	fn text(&mut self, text: &str, out: &mut Messages<M>) -> Handled {
@@ -289,6 +303,10 @@ where
 		let handled = self.state.mouse(msg, out);
 		self.emit(out);
 		handled
+	}
+
+	fn accepts_double_click(&self, msg: &MouseMsg) -> bool {
+		self.state.accepts_double_click(msg)
 	}
 
 	fn text(&mut self, text: &str, out: &mut Messages<M>) -> Handled {

@@ -187,6 +187,16 @@ impl<M> Control<M> for TableState {
 			None => Handled::No,
 		}
 	}
+
+	/// Двойной клик — только по строке (ADR-0035): полоса прокрутки, заголовок и пустые строки
+	/// не в счёт.
+	fn accepts_double_click(&self, msg: &MouseMsg) -> bool {
+		!self.scroll.contains(msg)
+			&& self
+				.rows
+				.item_at(self.node.area, msg.col, msg.row)
+				.is_some()
+	}
 }
 
 impl WidgetEvents for TableState {

@@ -1,6 +1,7 @@
 //! Экран из виджетов `gterm-widgets` (ADR-0023, ADR-0026, ADR-0029) на системном моноширинном шрифте, без
 //! `assets/`: сверху вкладки (ADR-0032; `←`/`→` под фокусом или клик), на первой — слева список
-//! в группе с подсветкой рамки и полосой прокрутки (мышь: стрелки и дорожка с повтором при удержании, ползунок, колесо), справа таблица с такой же полосой, абзац с переносом и кнопка,
+//! в группе с подсветкой рамки и полосой прокрутки (мышь: стрелки и дорожка с повтором при удержании, ползунок, колесо;
+//! двойной клик по пункту — ADR-0035 — пишет его в строку позиции внизу), справа таблица с такой же полосой, абзац с переносом и кнопка,
 //! на второй — индикаторы `Gauge`, `LineGauge` и `Meter` (ADR-0034); снизу индикатор позиции в списке и подсказка.
 //! Экран описан один раз — `Demo::ui()`: дерево раскладывает, рисует,
 //! водит фокус по `Tab`/`Shift+Tab`, доставляет клавиши и мышь контролам и отдаёт сообщения
@@ -135,6 +136,8 @@ enum Msg {
 	Picked(usize),
 	/// Выбрана вкладка.
 	Tab(usize),
+	/// Двойной клик по пункту списка (ADR-0035): к этому моменту пункт уже выделен.
+	Opened,
 	OpenDialog,
 	CloseDialog,
 }
@@ -148,6 +151,8 @@ struct Demo {
 	open: ButtonState,
 	ok: ButtonState,
 	dialog: bool,
+	/// Пункт, открытый двойным кликом, — для строки подсказки.
+	opened: Option<usize>,
 	/// Комбинация, которую сейчас набирает пользователь; кормится из `on_key` через описание.
 	tracker: HotkeyTracker,
 	/// Карта сочетаний экрана (ADR-0029).
@@ -186,7 +191,11 @@ impl Demo {
 				.border_type(BorderType::Rounded)
 				.border_style(dim_border),
 			Layout::vertical([Constraint::Fill(1)]),
-			vec![Ui::stateful(list, &mut self.list).on_select(Msg::Picked)],
+			vec![
+				Ui::stateful(list, &mut self.list)
+					.on_select(Msg::Picked)
+					.on_double_click(Msg::Opened),
+			],
 		)
 		.focus_style(focus);
 
@@ -328,9 +337,13 @@ impl Demo {
 				],
 			)
 		};
+		let opened = match self.opened {
+			Some(index) => format!("открыт «{}»", ITEMS[index.min(ITEMS.len() - 1)]),
+			None => "двойной клик — открыть".to_owned(),
+		};
 		let progress = LineGauge::new()
 			.ratio(ratio)
-			.label(format!(" выделено {position} из {}", ITEMS.len()))
+			.label(format!(" выделено {position} из {}, {opened}", ITEMS.len()))
 			.filled_style(focus)
 			.unfilled_style(dim_border);
 
@@ -414,6 +427,8 @@ impl Demo {
 		match message {
 			// Выделение и вкладка уже в состояниях контролов; описание читает их при построении.
 			Msg::Picked(_) | Msg::Tab(_) => {}
+			// Первое нажатие пары уже выделило пункт под указателем.
+			Msg::Opened => self.opened = self.list.selected(),
 			Msg::OpenDialog => self.dialog = true,
 			Msg::CloseDialog => self.dialog = false,
 		}
