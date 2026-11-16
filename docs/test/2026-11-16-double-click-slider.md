@@ -59,7 +59,8 @@
 | База (`e7c0403`) | `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test` | чисто, чисто, 313 тестов, 0 падений | `target/step-dc/baseline.log` |
 | После двойного клика | те же | чисто, чисто, 330 (+17), 0 падений | `target/step-dc/feature1.log` |
 | После ползунка | те же | чисто, чисто, 340 (+10), 0 падений | `target/step-dc/feature2.log` |
-| Итог после документов и мутаций | те же | см. `final.log` | `target/step-dc/final.log` |
+| Итог после документов и мутаций | те же | чисто, чисто, 340 тестов, 0 падений | `target/step-dc/final.log` |
+| Независимый прогон перед публикацией | те же | чисто, чисто, 340 тестов в 48 наборах, 0 падений | `target/step-dc/lead-review.log` |
 | Мутации | `target/step-dc/mutate.sh`, 8 штук | все пойманы, исходники восстановлены (`cmp`) | `target/step-dc/mutation-*.log` |
 
 Числа — сумма строк `test result` наборов с обвязкой; 5 оконных бинарников `harness = false` (`stage6_events`, `stage6_events_auto`, `stage6_fallback`, `stage8_faults`, `tick_events`) прошли в каждом прогоне (код возврата `cargo test` — 0) и в сумму не входят.
