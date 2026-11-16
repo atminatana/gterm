@@ -4,7 +4,7 @@
 
 mod common;
 
-use common::{CallLog, Msg, Stub, assert_screen, call_log, key_msg, left_down, screen};
+use common::{CallLog, Msg, Stub, assert_screen, call_log, key_msg, left_down, left_up, screen};
 use gterm_widgets::input::Handled;
 use gterm_widgets::widgets::{ComboBox, ComboBoxState};
 use gterm_widgets::{Constraint, Control, Layout, Rect, StatefulWidget, Ui};
@@ -163,6 +163,48 @@ fn escape_and_click_outside_collapse_the_list_silently() {
 	// Следующий ввод снова идёт экрану: Tab переводит фокус на соседа.
 	app.key(NamedKey::Tab);
 	assert!(app.other.node.focused);
+}
+
+/// Поле принимает нажатие и получает захват, а парное отпускание уходит уже слою списка. Захват не
+/// должен пережить список: иначе следующее нажатие где угодно достанется полю и раскроет его заново.
+#[test]
+fn a_field_opened_by_a_click_does_not_keep_the_pointer_after_the_list_is_closed() {
+	let log = call_log();
+	let mut app = App::new(&log);
+	app.draw();
+	app.ui().route_mouse(&left_down(1, 0), SCREEN);
+	app.draw();
+	app.ui().route_mouse(&left_up(1, 0), SCREEN);
+	assert!(app.kind.open, "клик по полю раскрыл список");
+	assert!(
+		!app.kind.node.captured,
+		"пока список раскрыт, поле указатель не держит"
+	);
+
+	// Закрытие клавишей: следующее нажатие мимо поля достаётся соседу, список закрыт.
+	app.key(NamedKey::Escape);
+	app.draw();
+	app.ui().route_mouse(&left_down(1, 1), SCREEN);
+	assert!(!app.kind.open, "нажатие мимо поля не раскрывает список");
+	assert!(
+		!log.borrow().is_empty(),
+		"нажатие получил контрол под указателем"
+	);
+	app.ui().route_mouse(&left_up(1, 1), SCREEN);
+
+	// То же после закрытия кликом мимо слоя.
+	app.ui().route_mouse(&left_down(1, 0), SCREEN);
+	app.draw();
+	app.ui().route_mouse(&left_up(1, 0), SCREEN);
+	assert!(app.kind.open);
+	app.ui().route_mouse(&left_down(10, 9), SCREEN);
+	app.ui().route_mouse(&left_up(10, 9), SCREEN);
+	assert!(!app.kind.open);
+	app.draw();
+	log.borrow_mut().clear();
+	app.ui().route_mouse(&left_down(1, 1), SCREEN);
+	assert!(!app.kind.open);
+	assert!(!log.borrow().is_empty());
 }
 
 #[test]

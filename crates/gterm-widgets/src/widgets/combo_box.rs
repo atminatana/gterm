@@ -368,6 +368,11 @@ impl<'a, M: 'a> Ui<'a, M> {
 		if !state.open {
 			return Self::stateful(widget, state).on_select(on_select);
 		}
+		// Раскрытие кликом оставляет полю захват указателя: нажатие принято, а парное отпускание
+		// уходит уже слою. Пока список раскрыт, поля в дереве нет и держать указатель ему нечем —
+		// иначе после закрытия следующее нажатие где угодно досталось бы полю и раскрыло список
+		// заново.
+		state.node.captured = false;
 		let anchor = state.node.area;
 		let items = widget.items;
 		let rows = widget
