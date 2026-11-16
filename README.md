@@ -32,7 +32,7 @@ application writes cells into a `ScreenBuffer` and receives keyboard and mouse e
   meters and timers; with no period the idle loop never wakes up.
 - **Widgets** (separate crate `gterm-widgets`), immediate mode in the style of ratatui: `Block`,
   `Paragraph`, `List`, `Table`, `Tabs`, `Gauge`, `LineGauge`, `Meter`, `Scrollbar`, `Popup`,
-  `Button`, `Checkbox`, `TextInput`, `ComboBox`; layout, focus ring, mouse, modal layers, a hotkey map and
+  `Button`, `Checkbox`, `Slider`, `TextInput`, `ComboBox`; layout, focus ring, mouse, modal layers, a hotkey map and
   the clipboard. A double click on any control is bound to a message like a button click
   (`on_double_click`); the window counts the presses, controls need no clock.
 
@@ -61,7 +61,7 @@ cargo run -p gterm --example minimal                  # smallest consumer, syste
 cargo run -p gterm --example pseudographica           # pseudographics modes
 cargo run -p gterm --example hotkeys                  # key combinations
 cargo run -p gterm-widgets --example widgets          # a screen built from widgets
-cargo run -p gterm-widgets --example widget_edit      # a form: inputs, checkboxes, combo box
+cargo run -p gterm-widgets --example widget_edit      # a form: inputs, slider, checkboxes, combo box
 cargo run --bin full_table                            # table of all glyphs
 cargo run --bin overlay                               # overlay of client buffers
 ```

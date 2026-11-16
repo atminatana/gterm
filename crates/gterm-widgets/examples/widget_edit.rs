@@ -1,6 +1,7 @@
 //! Форма из контролов `gterm-widgets` (ADR-0026, ADR-0027, ADR-0029) на системном моноширинном шрифте:
-//! три поля ввода, выпадающий список, группа «Параметры» с двумя флажками (ADR-0031; пробел, Enter или
-//! клик — переключить), кнопки «Применить» и «Сброс», строка статуса. Экран
+//! три поля ввода, выпадающий список, ползунок «Уровень» со значением справа (ADR-0036; `←`/`→`,
+//! `Home`/`End`, клик, протяжка, колесо), группа «Параметры» с двумя флажками (ADR-0031; пробел,
+//! Enter или клик — переключить), кнопки «Применить» и «Сброс», строка статуса. Экран
 //! описан один раз — `Form::ui()`; текст приходит через `on_text` и идёт полю под фокусом,
 //! `Tab`/`Shift+Tab` ходят по кольцу поля → список → кнопки, `Enter` в поле — «Применить»,
 //! список раскрывается `Enter`/пробелом/`↓`/кликом слоем под полем и закрывается выбором, `Esc`
@@ -22,7 +23,7 @@ use gterm::hotkey::HotkeyTracker;
 use gterm::rasterizer::Rasterizer;
 use gterm_widgets::widgets::{
 	Block, BorderType, Button, ButtonState, Checkbox, CheckboxState, ComboBox, ComboBoxState,
-	Paragraph, TextInput, TextInputState,
+	Paragraph, Slider, SliderState, TextInput, TextInputState,
 };
 use gterm_widgets::{Constraint, HotkeyMap, Layout, Line, Rect, Span, Style, SystemClipboard, Ui};
 use winit::event::{ElementState, KeyEvent};
@@ -40,6 +41,9 @@ const FIELD_BG: Color = Color::from_rgb(0x20, 0x28, 0x38);
 const FOCUS_BG: Color = Color::from_rgb(0x2A, 0x4A, 0x7A);
 
 const KINDS: [&str; 4] = ["файл", "каталог", "ссылка", "устройство"];
+/// Уровень по умолчанию и после «Сброс»; шаг клавиш и колеса.
+const LEVEL_DEFAULT: i64 = 50;
+const LEVEL_STEP: i64 = 5;
 
 fn main() -> ExitCode {
 	let env_backend = std::env::var(BACKEND_ENV).ok();
@@ -83,6 +87,9 @@ fn run(config: Config) -> Result<(), Box<dyn Error>> {
 		keys: HotkeyMap::new()
 			.bind_str("Ctrl+S", Msg::Apply)?
 			.bind_str("Ctrl+R", Msg::Reset)?,
+		level: SliderState::new(0, 100)
+			.with_value(LEVEL_DEFAULT)
+			.with_step(LEVEL_STEP),
 		..Form::default()
 	};
 	App::new("gterm widget_edit", screen, rasterizer, config, options).run(form)?;
@@ -96,6 +103,7 @@ enum Msg {
 	Path(String),
 	Size(String),
 	Kind(usize),
+	Level(i64),
 	Hidden(bool),
 	ReadOnly(bool),
 	Apply,
@@ -109,6 +117,7 @@ struct Form {
 	path: TextInputState,
 	size: TextInputState,
 	kind: ComboBoxState,
+	level: SliderState,
 	hidden: CheckboxState,
 	read_only: CheckboxState,
 	apply: ButtonState,
@@ -163,12 +172,19 @@ fn button<'a>(label: &'a str) -> Button<'a> {
 
 impl Form {
 	fn ui(&mut self) -> Ui<'_, Msg> {
+		// Значение — до того, как описание возьмёт состояние ползунка по `&mut`.
+		let level = format!("{:>4} %", self.level.value());
+		let slider = Slider::new()
+			.filled_style(Style::new().fg(ACCENT))
+			.unfilled_style(Style::new().fg(DIM))
+			.focus_style(Style::new().bg(FOCUS_BG));
 		let form = Ui::group(
 			Block::bordered()
 				.title(" Форма ")
 				.border_type(BorderType::Rounded)
 				.border_style(Style::new().fg(DIM)),
 			Layout::vertical([
+				Constraint::Length(1),
 				Constraint::Length(1),
 				Constraint::Length(1),
 				Constraint::Length(1),
@@ -207,6 +223,16 @@ impl Form {
 							.highlight_style(Style::new().bg(FOCUS_BG).bold()),
 						&mut self.kind,
 						Msg::Kind,
+					),
+				),
+				row(
+					"Уровень",
+					Ui::split(
+						Layout::horizontal([Constraint::Fill(1), Constraint::Length(7)]),
+						vec![
+							Ui::stateful(slider, &mut self.level).on_value(Msg::Level),
+							Ui::widget(Paragraph::new(Line::styled(level, Style::new().fg(FG)))),
+						],
 					),
 				),
 				Ui::group(
@@ -269,7 +295,7 @@ impl Form {
 		Ui::split(
 			Layout::vertical([
 				Constraint::Fill(1),
-				Constraint::Length(14),
+				Constraint::Length(15),
 				Constraint::Fill(1),
 				Constraint::Length(1),
 				Constraint::Length(1),
@@ -299,15 +325,17 @@ impl Form {
 			Msg::Path(value) => self.last = format!("путь: «{value}»"),
 			Msg::Size(value) => self.last = format!("размер: «{value}»"),
 			Msg::Kind(index) => self.last = format!("тип: {}", KINDS[index]),
+			Msg::Level(value) => self.last = format!("уровень: {value} %"),
 			Msg::Hidden(checked) => self.last = format!("скрытый: {}", yes_no(checked)),
 			Msg::ReadOnly(checked) => self.last = format!("только чтение: {}", yes_no(checked)),
 			Msg::Apply => {
 				self.applied = format!(
-					"имя={} путь={} размер={} тип={} скрытый={} чтение={}",
+					"имя={} путь={} размер={} тип={} уровень={} скрытый={} чтение={}",
 					self.name.value(),
 					self.path.value(),
 					self.size.value(),
 					self.kind.selected().map_or("—", |i| KINDS[i]),
+					self.level.value(),
 					yes_no(self.hidden.is_checked()),
 					yes_no(self.read_only.is_checked()),
 				);
@@ -318,6 +346,8 @@ impl Form {
 				self.path.clear();
 				self.size.clear();
 				self.kind.select(None);
+				// Программная установка сообщения `Level` не даёт (ADR-0036).
+				self.level.set_value(LEVEL_DEFAULT);
 				self.hidden.set_checked(false);
 				self.read_only.set_checked(false);
 				self.applied.clear();

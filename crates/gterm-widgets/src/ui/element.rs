@@ -60,6 +60,9 @@ pub(super) trait Element<'a, M> {
 	fn bind_toggle(&mut self, to_message: Box<dyn Fn(bool) -> M + 'a>) {
 		let _ = to_message;
 	}
+	fn bind_value(&mut self, to_message: Box<dyn Fn(i64) -> M + 'a>) {
+		let _ = to_message;
+	}
 }
 
 /// Лист без состояния: виджет потребляется отрисовкой.
@@ -222,6 +225,7 @@ pub(super) struct Stateful<'a, M, W, S> {
 	on_change: Option<Box<dyn Fn(String) -> M + 'a>>,
 	on_submit: Option<Box<dyn Fn(String) -> M + 'a>>,
 	on_toggle: Option<Box<dyn Fn(bool) -> M + 'a>>,
+	on_value: Option<Box<dyn Fn(i64) -> M + 'a>>,
 }
 
 impl<'a, M, W, S> Stateful<'a, M, W, S> {
@@ -234,6 +238,7 @@ impl<'a, M, W, S> Stateful<'a, M, W, S> {
 			on_change: None,
 			on_submit: None,
 			on_toggle: None,
+			on_value: None,
 		}
 	}
 }
@@ -269,6 +274,11 @@ where
 			Some(WidgetEvent::Toggled(checked)) => {
 				if let Some(to_message) = &self.on_toggle {
 					out.push(to_message(checked));
+				}
+			}
+			Some(WidgetEvent::ValueChanged(value)) => {
+				if let Some(to_message) = &self.on_value {
+					out.push(to_message(value));
 				}
 			}
 			None => {}
@@ -360,5 +370,9 @@ where
 
 	fn bind_toggle(&mut self, to_message: Box<dyn Fn(bool) -> M + 'a>) {
 		self.on_toggle = Some(to_message);
+	}
+
+	fn bind_value(&mut self, to_message: Box<dyn Fn(i64) -> M + 'a>) {
+		self.on_value = Some(to_message);
 	}
 }

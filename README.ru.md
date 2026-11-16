@@ -31,7 +31,7 @@
   ввода — для индикаторов и таймеров; без периода цикл в простое не просыпается.
 - **Виджеты** (отдельный крейт `gterm-widgets`), немедленный режим по образцу ratatui: `Block`,
   `Paragraph`, `List`, `Table`, `Tabs`, `Gauge`, `LineGauge`, `Meter`, `Scrollbar`, `Popup`,
-  `Button`, `Checkbox`, `TextInput`, `ComboBox`; раскладка, кольцо фокуса, мышь, модальные слои, карта
+  `Button`, `Checkbox`, `Slider`, `TextInput`, `ComboBox`; раскладка, кольцо фокуса, мышь, модальные слои, карта
   сочетаний клавиш и буфер обмена. Двойной клик по любому контролу привязывается к сообщению, как
   клик кнопки (`on_double_click`); нажатия считает окно, часы контролам не нужны.
 
@@ -60,7 +60,7 @@ cargo run -p gterm --example minimal                  # минимальный �
 cargo run -p gterm --example pseudographica           # режимы псевдографики
 cargo run -p gterm --example hotkeys                  # комбинации клавиш
 cargo run -p gterm-widgets --example widgets          # экран из виджетов
-cargo run -p gterm-widgets --example widget_edit      # форма: поля ввода, флажки, выпадающий список
+cargo run -p gterm-widgets --example widget_edit      # форма: поля ввода, ползунок, флажки, выпадающий список
 cargo run --bin full_table                            # таблица всех глифов
 cargo run --bin overlay                               # наложение клиентских буферов
 ```
