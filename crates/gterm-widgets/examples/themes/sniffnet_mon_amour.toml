@@ -1,0 +1,16 @@
+# Тема sniffnet «mon_amour» в формате helix для gterm-widgets (ADR-0038).
+# Источник: resources/themes/mon_amour.toml (sniffnet 1.6.0, MIT OR Apache-2.0) — см. README.md каталога.
+# Заданы только области основы; тона (ui.control*, ui.selection, …) и области виджетов
+# выводятся из них. Любую из них можно задать здесь строкой — она заменит выведенную.
+
+"ui.background" = { bg = "primary" }
+"ui.text" = "text_body"
+"ui.accent" = { fg = "text_headers", bg = "secondary" }
+
+[palette]
+primary = "#F5F5DC"       # фон
+secondary = "#432C7A"     # акцент: шапка, рамки, входящие соединения
+outgoing = "#3AA6B9"      # второй акцент: исходящие соединения
+text_body = "#000000"     # текст на фоне
+text_headers = "#FFFFFF"  # текст на акценте
+starred = "#D7A313"       # звёздочка избранного

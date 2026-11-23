@@ -1,0 +1,8 @@
+# Потомок: своя область, замена области родителя и одного цвета палитры.
+inherits = "base"
+
+"ui.text" = "accent"
+"myapp.status" = "ink"
+
+[palette]
+accent = "#00FF00"

@@ -8,6 +8,7 @@ use crate::buffer::BufferExt;
 use crate::geometry::Rect;
 use crate::style::Style;
 use crate::text::{Alignment, Line, StyledLine};
+use crate::theme::Theme;
 use crate::widgets::Widget;
 
 bitflags! {
@@ -167,6 +168,18 @@ impl<'a> Block<'a> {
 		self
 	}
 
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Рамка и заголовки — цвет символа области `ui.window`.
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		self.border_style = theme.border().patch(self.border_style);
+	}
+
 	/// Наложить стиль на стиль рамки (подсветка фокуса у контейнера дерева, ADR-0026).
 	pub(crate) fn patch_border_style(&mut self, style: Style) {
 		self.border_style = self.border_style.patch(style);
@@ -278,6 +291,10 @@ impl<'a> Block<'a> {
 }
 
 impl Widget for Block<'_> {
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
+
 	fn render(self, area: Rect, buf: &mut ScreenBuffer) {
 		let area = area.intersection(buf.area());
 		if area.is_empty() {

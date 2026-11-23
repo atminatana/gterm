@@ -16,6 +16,7 @@ use crate::geometry::Rect;
 use crate::input::{Handled, KeyMsg, Messages, MouseKind, MouseMsg};
 use crate::style::Style;
 use crate::text::Line;
+use crate::theme::{Theme, scope};
 use crate::widgets::{Block, StatefulWidget, Widget};
 
 /// Состояние поля: значение, курсор (в символах, `0..=len`), первый видимый символ.
@@ -467,6 +468,30 @@ impl<'a> TextInput<'a> {
 		self.block = Some(block);
 		self
 	}
+
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Области `ui.input.*`; в теме без них поле — как меню helix, выделение — `ui.selection`.
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		self.style = theme.first(&["ui.input", scope::MENU]).patch(self.style);
+		self.focus_style = theme
+			.first(&["ui.input.focus", scope::TEXT_FOCUS])
+			.patch(self.focus_style);
+		self.selection_style = self
+			.selection_style
+			.or_else(|| theme.find(&["ui.input.selection", scope::SELECTION]));
+		self.placeholder_style = theme
+			.inactive("ui.input.placeholder")
+			.patch(self.placeholder_style);
+		if let Some(block) = &mut self.block {
+			block.set_theme(theme);
+		}
+	}
 }
 
 /// Поменять местами fg и bg ячейки — вид курсора и выделения по умолчанию.
@@ -477,6 +502,10 @@ fn swap_colors(buf: &mut ScreenBuffer, x: u16, y: u16) {
 
 impl StatefulWidget for TextInput<'_> {
 	type State = TextInputState;
+
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
 
 	fn render(self, area: Rect, buf: &mut ScreenBuffer, state: &mut TextInputState) {
 		let area = area.intersection(buf.area());

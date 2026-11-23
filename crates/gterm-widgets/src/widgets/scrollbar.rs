@@ -14,6 +14,7 @@ use crate::buffer::BufferExt;
 use crate::geometry::Rect;
 use crate::input::MouseMsg;
 use crate::style::Style;
+use crate::theme::{Theme, fg_only, scope};
 use crate::widgets::Widget;
 
 /// Что прокручивается: длина содержимого, смещение первого видимого элемента и сколько
@@ -368,6 +369,24 @@ impl Scrollbar {
 		self
 	}
 
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Области `ui.scrollbar` и `ui.scrollbar.thumb`; в теме без них дорожка — как рамка,
+	/// ползунок — цвет символа полосы прокрутки меню helix (`ui.menu.scroll`).
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		let track = theme.get("ui.scrollbar").unwrap_or_else(|| theme.border());
+		let thumb = theme
+			.get("ui.scrollbar.thumb")
+			.unwrap_or_else(|| fg_only(theme.first(&[scope::MENU_SCROLL])));
+		self.style = track.patch(self.style);
+		self.thumb_style = thumb.patch(self.thumb_style);
+	}
+
 	/// Разметка полосы в области `area` для состояния `state`; `None` — рисовать негде.
 	fn layout(&self, area: Rect, state: &ScrollbarState) -> Option<BarLayout> {
 		if area.is_empty() {
@@ -446,6 +465,10 @@ impl Scrollbar {
 }
 
 impl Widget for Scrollbar {
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
+
 	fn render(self, area: Rect, buf: &mut ScreenBuffer) {
 		self.draw(area, buf, &self.state);
 	}

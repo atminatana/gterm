@@ -11,6 +11,7 @@ use gterm::buffer::ScreenBuffer;
 use crate::clipboard::{Clipboard, EditCommand};
 use crate::geometry::Rect;
 use crate::input::{Handled, KeyMsg, Messages, MouseMsg};
+use crate::theme::Theme;
 
 /// Общий блок состояния узла дерева: пишет и читает дерево (`ui`), контрол лишь хранит.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -99,6 +100,12 @@ pub trait Control<M> {
 /// Стиль фокуса — по `self.node().focused`.
 pub trait Drawable {
 	fn draw(&mut self, area: Rect, buf: &mut ScreenBuffer);
+
+	/// Тема описания экрана (ADR-0037): дерево зовёт это перед `draw`, контрол берёт из темы
+	/// свои области. По умолчанию тема не действует.
+	fn apply_theme(&mut self, theme: &Theme) {
+		let _ = theme;
+	}
 }
 
 /// Что произошло в состоянии встроенного контрола за одну обработку: дерево превращает это в

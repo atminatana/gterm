@@ -1,0 +1,19 @@
+# Тестовая тема: все формы значений формата helix (ADR-0037).
+
+"ui.background" = { bg = "ground" }
+"ui.text" = "ink"
+"ui.text.focus" = { fg = "accent", modifiers = ["bold", "italic"] }
+"ui.menu" = { fg = "ink", bg = "#20283880" }
+"ui.menu.selected" = { modifiers = ["reversed"] }
+"ui.cursor" = { fg = "accent", bg = "ground", modifiers = ["reversed", "dim"] }
+"ui.link" = { fg = "light-blue", underline = { color = "accent", style = "curl" } }
+"ui.plain" = { fg = "default", modifiers = ["underlined"] }
+"ui.broken.color" = { fg = "no-such-color" }
+"ui.broken.type" = 42
+"myapp.toolbar" = { fg = "black", bg = "accent" }
+"myapp.toolbar.button" = "white"
+
+[palette]
+ground = "#101010"
+ink = "#C0C0C0"
+accent = "#FF8000"

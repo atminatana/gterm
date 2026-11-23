@@ -19,6 +19,7 @@ use crate::geometry::Rect;
 use crate::hotkeys::HotkeyMap;
 use crate::input::{Handled, KeyMsg, Messages, MouseKind, MouseMsg, Routed};
 use crate::style::Style;
+use crate::theme::{Theme, scope};
 use crate::widgets::Popup;
 
 /// Где лежит слой на сетке.
@@ -210,13 +211,23 @@ impl<'a, M: 'a> Modal<'a, M> {
 		Routed::new(Handled::Yes, messages)
 	}
 
-	/// Буфер наложения слоя с нарисованным содержимым и его область на сетке.
-	pub(super) fn render(self, screen: Rect) -> (Rect, ScreenBuffer) {
+	/// Буфер наложения слоя с нарисованным содержимым и его область на сетке. С темой экрана
+	/// (ADR-0037) фон слоя — `ui.popup` поверх базового стиля, под стилем самого слоя; та же
+	/// тема идёт содержимому.
+	pub(super) fn render(self, screen: Rect, theme: Option<&'a Theme>) -> (Rect, ScreenBuffer) {
 		let area = self.area(screen);
-		let popup = Popup::new(area).style(self.style);
+		let style = match theme {
+			Some(theme) => theme
+				.base()
+				.patch(theme.first(&[scope::POPUP]))
+				.patch(self.style),
+			None => self.style,
+		};
+		let popup = Popup::new(area).style(style);
 		let mut buffer = popup.buffer();
-		if let Some(content) = self.content {
-			content.render(popup.local_area(), &mut buffer);
+		if let Some(mut content) = self.content {
+			content.theme = content.theme.or(theme);
+			content.render_nodes(popup.local_area(), &mut buffer);
 		}
 		(area, buffer)
 	}
@@ -259,6 +270,7 @@ impl<'a, M: 'a> Ui<'a, M> {
 
 	/// Буфер наложения слоя и его область на сетке `screen` (точка входа тестов без окна).
 	pub fn modal_buffer(self, screen: Rect) -> Option<(Rect, ScreenBuffer)> {
-		self.modal.map(|modal| modal.render(screen))
+		let theme = self.theme;
+		self.modal.map(|modal| modal.render(screen, theme))
 	}
 }

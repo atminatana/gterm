@@ -6,6 +6,7 @@
 use gterm::buffer::ScreenBuffer;
 
 use crate::geometry::Rect;
+use crate::theme::Theme;
 
 mod block;
 mod button;
@@ -43,10 +44,24 @@ pub use text_input::{TextInput, TextInputState};
 /// Виджет без состояния: потребляется отрисовкой.
 pub trait Widget {
 	fn render(self, area: Rect, buf: &mut ScreenBuffer);
+
+	/// Подставить стили темы под заданные явно (ADR-0037): дерево [`Ui`](crate::ui::Ui) с
+	/// подключённой темой зовёт это перед отрисовкой. Области своей раскраски знает сам
+	/// виджет; по умолчанию тема не действует.
+	fn apply_theme(&mut self, theme: &Theme) {
+		let _ = theme;
+	}
 }
 
 /// Виджет с состоянием, которое хранит приложение (выделение, смещение прокрутки).
 pub trait StatefulWidget {
 	type State;
 	fn render(self, area: Rect, buf: &mut ScreenBuffer, state: &mut Self::State);
+
+	/// Подставить стили темы под заданные явно (ADR-0037): дерево [`Ui`](crate::ui::Ui) с
+	/// подключённой темой зовёт это перед отрисовкой. Области своей раскраски знает сам
+	/// виджет; по умолчанию тема не действует.
+	fn apply_theme(&mut self, theme: &Theme) {
+		let _ = theme;
+	}
 }

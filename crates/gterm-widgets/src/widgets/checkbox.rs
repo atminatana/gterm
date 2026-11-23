@@ -12,6 +12,7 @@ use crate::geometry::Rect;
 use crate::input::{Handled, KeyMsg, Messages, MouseKind, MouseMsg};
 use crate::style::Style;
 use crate::text::{Alignment, Line, StyledLine};
+use crate::theme::{Theme, scope};
 use crate::widgets::StatefulWidget;
 
 /// Состояние флажка: отмечен ли, активен ли, нажат ли мышью; фокус и область — от дерева.
@@ -204,10 +205,35 @@ impl<'a> Checkbox<'a> {
 		self.disabled_style = style;
 		self
 	}
+
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Области `ui.checkbox.*`; в теме без них — текст под фокусом и выделение helix.
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		self.style = theme.first(&["ui.checkbox"]).patch(self.style);
+		self.focus_style = theme
+			.first(&["ui.checkbox.focus", scope::TEXT_FOCUS])
+			.patch(self.focus_style);
+		self.pressed_style = theme
+			.first(&["ui.checkbox.pressed", scope::SELECTION])
+			.patch(self.pressed_style);
+		self.disabled_style = theme
+			.inactive("ui.checkbox.disabled")
+			.patch(self.disabled_style);
+	}
 }
 
 impl StatefulWidget for Checkbox<'_> {
 	type State = CheckboxState;
+
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
 
 	fn render(self, area: Rect, buf: &mut ScreenBuffer, state: &mut CheckboxState) {
 		let area = area.intersection(buf.area());

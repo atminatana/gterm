@@ -1,0 +1,16 @@
+# Тема sniffnet «solarized_light» в формате helix для gterm-widgets (ADR-0038).
+# Источник: src/gui/styles/custom_themes/solarized.rs (sniffnet 1.6.0, MIT OR Apache-2.0) — см. README.md каталога.
+# Заданы только области основы; тона (ui.control*, ui.selection, …) и области виджетов
+# выводятся из них. Любую из них можно задать здесь строкой — она заменит выведенную.
+
+"ui.background" = { bg = "primary" }
+"ui.text" = "text_body"
+"ui.accent" = { fg = "text_headers", bg = "secondary" }
+
+[palette]
+primary = "#FDF6E3"       # фон
+secondary = "#859900"     # акцент: шапка, рамки, входящие соединения
+outgoing = "#268BD2"      # второй акцент: исходящие соединения
+text_body = "#002B36"     # текст на фоне
+text_headers = "#FDF6E3"  # текст на акценте
+starred = "#B58900"       # звёздочка избранного

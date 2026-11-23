@@ -1,0 +1,16 @@
+# Тема sniffnet «deep_sea» в формате helix для gterm-widgets (ADR-0038).
+# Источник: resources/themes/deep_sea.toml (sniffnet 1.6.0, MIT OR Apache-2.0) — см. README.md каталога.
+# Заданы только области основы; тона (ui.control*, ui.selection, …) и области виджетов
+# выводятся из них. Любую из них можно задать здесь строкой — она заменит выведенную.
+
+"ui.background" = { bg = "primary" }
+"ui.text" = "text_body"
+"ui.accent" = { fg = "text_headers", bg = "secondary" }
+
+[palette]
+primary = "#1C315E"       # фон
+secondary = "#088295"     # акцент: шапка, рамки, входящие соединения
+outgoing = "#FEFC86"      # второй акцент: исходящие соединения
+text_body = "#FFFFFF"     # текст на фоне
+text_headers = "#000000"  # текст на акценте
+starred = "#F5C227"       # звёздочка избранного

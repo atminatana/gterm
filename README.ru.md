@@ -34,6 +34,10 @@
   `Button`, `Checkbox`, `Slider`, `TextInput`, `ComboBox`; раскладка, кольцо фокуса, мышь, модальные слои, карта
   сочетаний клавиш и буфер обмена. Двойной клик по любому контролу привязывается к сообщению, как
   клик кнопки (`on_double_click`); нажатия считает окно, часы контролам не нужны.
+- **Темы.** `Theme` читает файлы тем редактора Helix (области, палитра, `inherits`); один вызов
+  `Ui::theme(&theme)` красит экран, рамки, модальные слои и все контролы, а свои области
+  приложение читает по имени. Теме достаточно основы — фона, текста и акцента: остальные тона
+  и области виджетов выводятся, и любую из них можно задать по имени.
 
 ## Крейты
 
@@ -61,6 +65,8 @@ cargo run -p gterm --example pseudographica           # режимы псевд�
 cargo run -p gterm --example hotkeys                  # комбинации клавиш
 cargo run -p gterm-widgets --example widgets          # экран из виджетов
 cargo run -p gterm-widgets --example widget_edit      # форма: поля ввода, ползунок, флажки, выпадающий список
+cargo run -p gterm-widgets --example widget_edit -- --theme=gterm_light   # с темой; F2 — следующая
+cargo run -p gterm-widgets --example theme -- --theme-dir=<каталог>   # просмотр тем: перечень, элементы, образец
 cargo run --bin full_table                            # таблица всех глифов
 cargo run --bin overlay                               # наложение клиентских буферов
 ```

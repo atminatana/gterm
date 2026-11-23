@@ -1,0 +1,47 @@
+# gterm light — светлый образец темы для gterm-widgets (ADR-0037).
+# Формат — как у тем редактора helix: область → цвет символа или таблица
+# { fg, bg, modifiers }, имена цветов — в [palette]. Области ui.button.*, ui.input.*,
+# ui.list.* и подобные — области виджетов gterm-widgets. Области виджетов заданы здесь явно —
+# образец точечной настройки; чего в файле нет (ui.control*, ui.combo*, …), выводится из
+# основы — ui.background, ui.text, ui.accent (ADR-0038).
+
+"ui.background" = { bg = "background" }
+"ui.text" = "text"
+"ui.accent" = { fg = "background", bg = "accent" }
+"ui.text.focus" = { fg = "accent" }
+"ui.text.inactive" = "dim"
+"ui.window" = "dim"
+"ui.window.focus" = "accent"
+"ui.popup" = { bg = "popup" }
+"ui.menu" = { fg = "text", bg = "field" }
+"ui.menu.selected" = { fg = "background", bg = "accent" }
+"ui.menu.scroll" = { fg = "accent", bg = "field" }
+"ui.selection" = { bg = "focus" }
+
+"ui.button" = { fg = "background", bg = "dim" }
+"ui.button.focus" = { bg = "accent" }
+"ui.button.pressed" = { fg = "text", bg = "focus" }
+"ui.button.disabled" = { fg = "dim", bg = "field" }
+"ui.checkbox.focus" = { fg = "accent" }
+"ui.input" = { bg = "field" }
+"ui.input.focus" = { bg = "focus" }
+"ui.input.placeholder" = "dim"
+"ui.list.selected" = { bg = "focus" }
+"ui.table.header" = { fg = "accent" }
+"ui.table.selected" = { bg = "focus" }
+"ui.tabs.selected" = "accent"
+"ui.scrollbar" = "dim"
+"ui.scrollbar.thumb" = "accent"
+"ui.gauge.filled" = { fg = "accent", bg = "field" }
+
+# Область приложения: значок бэкенда в строке статуса примера widget_edit.
+"widget_edit.badge" = { fg = "background", bg = "accent" }
+
+[palette]
+background = "#F4F1EA"
+text = "#2B2B2B"
+dim = "#8A8578"
+accent = "#1F6FB5"
+field = "#E4DFD3"
+focus = "#BFD7EE"
+popup = "#FFFFFF"

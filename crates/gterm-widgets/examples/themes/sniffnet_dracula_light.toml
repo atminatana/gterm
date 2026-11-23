@@ -1,0 +1,16 @@
+# Тема sniffnet «dracula_light» в формате helix для gterm-widgets (ADR-0038).
+# Источник: src/gui/styles/custom_themes/dracula.rs (sniffnet 1.6.0, MIT OR Apache-2.0) — см. README.md каталога.
+# Заданы только области основы; тона (ui.control*, ui.selection, …) и области виджетов
+# выводятся из них. Любую из них можно задать здесь строкой — она заменит выведенную.
+
+"ui.background" = { bg = "primary" }
+"ui.text" = "text_body"
+"ui.accent" = { fg = "text_headers", bg = "secondary" }
+
+[palette]
+primary = "#F8F8F2"       # фон
+secondary = "#9F1670"     # акцент: шапка, рамки, входящие соединения
+outgoing = "#005D6F"      # второй акцент: исходящие соединения
+text_body = "#282A36"     # текст на фоне
+text_headers = "#F8F8F2"  # текст на акценте
+starred = "#FFB86C"       # звёздочка избранного

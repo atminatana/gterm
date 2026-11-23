@@ -7,6 +7,7 @@ use crate::buffer::BufferExt;
 use crate::geometry::Rect;
 use crate::style::Style;
 use crate::text::{Alignment, StyledLine, Text, wrap_line};
+use crate::theme::Theme;
 use crate::widgets::{Block, Widget};
 
 /// Перенос строк по ширине области; `trim` — убирать пробелы по краям получившихся строк.
@@ -73,6 +74,21 @@ impl<'a> Paragraph<'a> {
 		self
 	}
 
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Своей области у текста нет: он берёт цвета области, на которой лежит; темой красится
+	/// только рамка.
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		if let Some(block) = &mut self.block {
+			block.set_theme(theme);
+		}
+	}
+
 	/// Строки к выводу при ширине `width`: с переносом или без.
 	fn lines(&self, width: u16) -> Vec<StyledLine> {
 		let base = self.style.patch(self.text.style);
@@ -105,6 +121,10 @@ impl<'a> Paragraph<'a> {
 }
 
 impl Widget for Paragraph<'_> {
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
+
 	fn render(self, area: Rect, buf: &mut ScreenBuffer) {
 		let area = area.intersection(buf.area());
 		if area.is_empty() {

@@ -9,6 +9,7 @@ use crate::clipboard::{Clipboard, EditCommand};
 use crate::control::{Control, Drawable, NodeState, WidgetEvent, WidgetEvents};
 use crate::geometry::Rect;
 use crate::input::{Handled, KeyMsg, Messages, MouseMsg};
+use crate::theme::Theme;
 use crate::widgets::{StatefulWidget, Widget};
 
 /// `'a` — время жизни описания: столько живут ссылки на состояния и замыкания привязок.
@@ -41,7 +42,9 @@ pub(super) trait Element<'a, M> {
 		let _ = (now, out);
 		Handled::No
 	}
-	fn render(&mut self, area: Rect, buf: &mut ScreenBuffer);
+	/// Нарисовать узел; тема описания (ADR-0037) передаётся виджету или контролу перед
+	/// отрисовкой — свои области он берёт сам.
+	fn render(&mut self, area: Rect, buf: &mut ScreenBuffer, theme: Option<&Theme>);
 	/// Слой закрывают кликом мимо; у листов без состояния не действует.
 	fn dismiss(&mut self) {}
 	/// Привязки встроенных контролов; у остальных элементов не действуют.
@@ -95,8 +98,11 @@ impl<M, W: Widget> Element<'_, M> for Stateless<W> {
 		Handled::No
 	}
 
-	fn render(&mut self, area: Rect, buf: &mut ScreenBuffer) {
-		if let Some(widget) = self.widget.take() {
+	fn render(&mut self, area: Rect, buf: &mut ScreenBuffer, theme: Option<&Theme>) {
+		if let Some(mut widget) = self.widget.take() {
+			if let Some(theme) = theme {
+				widget.apply_theme(theme);
+			}
 			widget.render(area, buf);
 		}
 	}
@@ -149,7 +155,10 @@ impl<M, C: Control<M> + Drawable> Element<'_, M> for Custom<'_, C> {
 		self.control.tick(now, out)
 	}
 
-	fn render(&mut self, area: Rect, buf: &mut ScreenBuffer) {
+	fn render(&mut self, area: Rect, buf: &mut ScreenBuffer, theme: Option<&Theme>) {
+		if let Some(theme) = theme {
+			self.control.apply_theme(theme);
+		}
 		self.control.draw(area, buf);
 	}
 
@@ -207,7 +216,10 @@ impl<M, C: Control<M> + Drawable> Element<'_, M> for Owned<C> {
 		self.control.tick(now, out)
 	}
 
-	fn render(&mut self, area: Rect, buf: &mut ScreenBuffer) {
+	fn render(&mut self, area: Rect, buf: &mut ScreenBuffer, theme: Option<&Theme>) {
+		if let Some(theme) = theme {
+			self.control.apply_theme(theme);
+		}
 		self.control.draw(area, buf);
 	}
 
@@ -342,8 +354,11 @@ where
 		handled
 	}
 
-	fn render(&mut self, area: Rect, buf: &mut ScreenBuffer) {
-		if let Some(widget) = self.widget.take() {
+	fn render(&mut self, area: Rect, buf: &mut ScreenBuffer, theme: Option<&Theme>) {
+		if let Some(mut widget) = self.widget.take() {
+			if let Some(theme) = theme {
+				widget.apply_theme(theme);
+			}
 			widget.render(area, buf, self.state);
 		}
 	}

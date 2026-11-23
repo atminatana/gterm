@@ -35,6 +35,10 @@ application writes cells into a `ScreenBuffer` and receives keyboard and mouse e
   `Button`, `Checkbox`, `Slider`, `TextInput`, `ComboBox`; layout, focus ring, mouse, modal layers, a hotkey map and
   the clipboard. A double click on any control is bound to a message like a button click
   (`on_double_click`); the window counts the presses, controls need no clock.
+- **Themes.** `Theme` reads theme files of the Helix editor (scopes, palette, `inherits`); one
+  call `Ui::theme(&theme)` colors the screen, borders, modal layers and every control, and the
+  application reads its own scopes by name. A theme may give only its base — background, text and
+  accent: the remaining tones and widget scopes are derived, and any of them can be set by name.
 
 ## Crates
 
@@ -62,6 +66,8 @@ cargo run -p gterm --example pseudographica           # pseudographics modes
 cargo run -p gterm --example hotkeys                  # key combinations
 cargo run -p gterm-widgets --example widgets          # a screen built from widgets
 cargo run -p gterm-widgets --example widget_edit      # a form: inputs, slider, checkboxes, combo box
+cargo run -p gterm-widgets --example widget_edit -- --theme=gterm_light   # themed; F2 — next theme
+cargo run -p gterm-widgets --example theme -- --theme-dir=<dir>   # theme viewer: list, scopes, sample UI
 cargo run --bin full_table                            # table of all glyphs
 cargo run --bin overlay                               # overlay of client buffers
 ```

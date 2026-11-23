@@ -13,6 +13,7 @@ use crate::geometry::Rect;
 use crate::input::{Handled, KeyMsg, Messages, MouseKind, MouseMsg};
 use crate::style::Style;
 use crate::text::Line;
+use crate::theme::{Theme, scope};
 use crate::widgets::{Block, StatefulWidget, Widget};
 
 /// Состояние вкладок: выбранная, активность, фокус и область — от дерева.
@@ -210,10 +211,39 @@ impl<'a> Tabs<'a> {
 		self.padding = (left, right);
 		self
 	}
+
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Области `ui.tabs.*`; в теме без них — строка буферов helix (`ui.bufferline`).
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		self.style = theme.first(&["ui.tabs", "ui.bufferline"]).patch(self.style);
+		self.highlight_style = theme
+			.first(&[
+				"ui.tabs.selected",
+				"ui.bufferline.active",
+				scope::MENU_SELECTED,
+			])
+			.patch(self.highlight_style);
+		self.focus_style = theme
+			.first(&["ui.tabs.focus", scope::TEXT_FOCUS])
+			.patch(self.focus_style);
+		if let Some(block) = &mut self.block {
+			block.set_theme(theme);
+		}
+	}
 }
 
 impl StatefulWidget for Tabs<'_> {
 	type State = TabsState;
+
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
 
 	fn render(self, area: Rect, buf: &mut ScreenBuffer, state: &mut TabsState) {
 		state.spans.clear();

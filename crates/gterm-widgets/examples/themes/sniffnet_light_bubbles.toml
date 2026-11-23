@@ -1,0 +1,16 @@
+# Тема sniffnet «light_bubbles» в формате helix для gterm-widgets (ADR-0038).
+# Источник: resources/themes/light_bubbles.toml (sniffnet 1.6.0, MIT OR Apache-2.0) — см. README.md каталога.
+# Заданы только области основы; тона (ui.control*, ui.selection, …) и области виджетов
+# выводятся из них. Любую из них можно задать здесь строкой — она заменит выведенную.
+
+"ui.background" = { bg = "primary" }
+"ui.text" = "text_body"
+"ui.accent" = { fg = "text_headers", bg = "secondary" }
+
+[palette]
+primary = "#CCFFFF"       # фон
+secondary = "#0080FF"     # акцент: шапка, рамки, входящие соединения
+outgoing = "#A748AE"      # второй акцент: исходящие соединения
+text_body = "#000066"     # текст на фоне
+text_headers = "#CCFFFF"  # текст на акценте
+starred = "#E1C82A"       # звёздочка избранного

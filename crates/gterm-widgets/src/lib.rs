@@ -22,6 +22,9 @@ pub mod layout;
 /// Трейты виджетов и сами виджеты.
 pub mod widgets;
 
+/// Тема оформления: области «имя → стиль» формата helix (ADR-0037).
+pub mod theme;
+
 /// Сообщения ввода, результат обработки и очередь сообщений приложения (ADR-0026).
 pub mod input;
 
@@ -49,5 +52,8 @@ pub use input::{Handled, KeyMsg, Messages, MouseKind, MouseMsg, Routed};
 pub use layout::{Constraint, Direction, Layout};
 pub use style::Style;
 pub use text::{Alignment, Line, Span, Text};
+pub use theme::Theme;
+#[cfg(feature = "theme-toml")]
+pub use theme::ThemeError;
 pub use ui::{Modal, Ui};
 pub use widgets::{StatefulWidget, Widget};

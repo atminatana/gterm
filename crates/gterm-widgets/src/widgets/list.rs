@@ -17,6 +17,7 @@ use crate::geometry::Rect;
 use crate::input::{Handled, KeyMsg, Messages, MouseKind, MouseMsg};
 use crate::style::Style;
 use crate::text::{StyledLine, Text};
+use crate::theme::{Theme, scope};
 use crate::widgets::scrollbar::BarState;
 use crate::widgets::selection::{self, RowMap};
 use crate::widgets::{Block, Scrollbar, ScrollbarState, StatefulWidget, Widget};
@@ -273,6 +274,33 @@ impl<'a> List<'a> {
 		self
 	}
 
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Области `ui.list` и `ui.list.selected`; в теме без них выделенный пункт — как в меню
+	/// helix. Рамка под фокусом — `ui.window.focus`.
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		self.style = theme.first(&["ui.list"]).patch(self.style);
+		self.highlight_style = theme
+			.first(&["ui.list.selected", scope::MENU_SELECTED])
+			.patch(self.highlight_style);
+		self.focus_style = Some(
+			theme
+				.focus_border()
+				.patch(self.focus_style.unwrap_or_default()),
+		);
+		if let Some(block) = &mut self.block {
+			block.set_theme(theme);
+		}
+		if let Some(scrollbar) = &mut self.scrollbar {
+			scrollbar.set_theme(theme);
+		}
+	}
+
 	pub fn len(&self) -> usize {
 		self.items.len()
 	}
@@ -345,6 +373,10 @@ impl<'a> List<'a> {
 
 impl StatefulWidget for List<'_> {
 	type State = ListState;
+
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
 
 	fn render(self, area: Rect, buf: &mut ScreenBuffer, state: &mut ListState) {
 		let area = area.intersection(buf.area());
@@ -447,6 +479,10 @@ impl StatefulWidget for List<'_> {
 }
 
 impl Widget for List<'_> {
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
+
 	fn render(self, area: Rect, buf: &mut ScreenBuffer) {
 		let mut state = ListState::default();
 		StatefulWidget::render(self, area, buf, &mut state);

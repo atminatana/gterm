@@ -1,0 +1,16 @@
+# Тема sniffnet «a11y_dark» в формате helix для gterm-widgets (ADR-0038).
+# Источник: src/gui/styles/custom_themes/a11y.rs (sniffnet 1.6.0, MIT OR Apache-2.0) — см. README.md каталога.
+# Заданы только области основы; тона (ui.control*, ui.selection, …) и области виджетов
+# выводятся из них. Любую из них можно задать здесь строкой — она заменит выведенную.
+
+"ui.background" = { bg = "primary" }
+"ui.text" = "text_body"
+"ui.accent" = { fg = "text_headers", bg = "secondary" }
+
+[palette]
+primary = "#0F1E3C"       # фон
+secondary = "#FCB608"     # акцент: шапка, рамки, входящие соединения
+outgoing = "#0BB1FC"      # второй акцент: исходящие соединения
+text_body = "#DDDDDD"     # текст на фоне
+text_headers = "#081020"  # текст на акценте
+starred = "#FBFF0F"       # звёздочка избранного

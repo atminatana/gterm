@@ -12,6 +12,7 @@ use crate::geometry::Rect;
 use crate::input::{Handled, KeyMsg, Messages, MouseKind, MouseMsg};
 use crate::style::Style;
 use crate::text::{Alignment, Line, StyledLine};
+use crate::theme::{Theme, scope};
 use crate::widgets::StatefulWidget;
 
 /// Состояние кнопки: активна ли, нажата ли мышью, фокус и область — от дерева.
@@ -161,10 +162,35 @@ impl<'a> Button<'a> {
 		self.disabled_style = style;
 		self
 	}
+
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Области `ui.button.*`; в теме без них — области меню и выделения helix.
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		self.style = theme.first(&["ui.button", scope::MENU]).patch(self.style);
+		self.focus_style = theme
+			.first(&["ui.button.focus", scope::MENU_SELECTED])
+			.patch(self.focus_style);
+		self.pressed_style = theme
+			.first(&["ui.button.pressed", scope::SELECTION])
+			.patch(self.pressed_style);
+		self.disabled_style = theme
+			.inactive("ui.button.disabled")
+			.patch(self.disabled_style);
+	}
 }
 
 impl StatefulWidget for Button<'_> {
 	type State = ButtonState;
+
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
 
 	fn render(self, area: Rect, buf: &mut ScreenBuffer, state: &mut ButtonState) {
 		let area = area.intersection(buf.area());

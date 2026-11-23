@@ -8,6 +8,7 @@ use crate::buffer::BufferExt;
 use crate::geometry::Rect;
 use crate::style::Style;
 use crate::text::{Alignment, Line, StyledLine};
+use crate::theme::{Theme, fg_only, scope};
 use crate::widgets::{Block, Widget};
 
 /// Полностью залитая ячейка.
@@ -40,6 +41,9 @@ pub(super) fn render_block(block: Option<&Block<'_>>, area: Rect, buf: &mut Scre
 		None => area,
 	}
 }
+
+/// Области заливки индикаторов в теме (ADR-0037).
+const FILLED_SCOPES: [&str; 2] = ["ui.gauge.filled", scope::MENU_SCROLL];
 
 /// Полоса-индикатор: заливка слева направо на всю высоту области, подпись по центру.
 #[derive(Clone, Debug)]
@@ -111,6 +115,23 @@ impl<'a> Gauge<'a> {
 		self
 	}
 
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Области `ui.gauge.*`; в теме без них заливка — полоса прокрутки меню helix
+	/// (`ui.menu.scroll`: символ — заливка, фон — незалитая часть).
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		self.style = theme.first(&["ui.gauge"]).patch(self.style);
+		self.gauge_style = theme.first(&FILLED_SCOPES).patch(self.gauge_style);
+		if let Some(block) = &mut self.block {
+			block.set_theme(theme);
+		}
+	}
+
 	/// Сколько ячеек залито полностью и сколько восьмых у следующей за ними (0 — её нет).
 	fn filled(&self, width: u16) -> (u16, u32) {
 		let width = f64::from(width);
@@ -124,6 +145,10 @@ impl<'a> Gauge<'a> {
 }
 
 impl Widget for Gauge<'_> {
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
+
 	fn render(self, area: Rect, buf: &mut ScreenBuffer) {
 		let area = area.intersection(buf.area());
 		if area.is_empty() {
@@ -239,9 +264,31 @@ impl<'a> LineGauge<'a> {
 		self.unfilled_symbol = unfilled;
 		self
 	}
+
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Те же области, что у [`Gauge`]; у линии берётся только цвет символа.
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		self.style = theme.first(&["ui.gauge"]).patch(self.style);
+		self.filled_style = fg_only(theme.first(&FILLED_SCOPES)).patch(self.filled_style);
+		self.unfilled_style =
+			fg_only(theme.first(&["ui.gauge.unfilled", scope::WINDOW])).patch(self.unfilled_style);
+		if let Some(block) = &mut self.block {
+			block.set_theme(theme);
+		}
+	}
 }
 
 impl Widget for LineGauge<'_> {
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
+
 	fn render(self, area: Rect, buf: &mut ScreenBuffer) {
 		let area = area.intersection(buf.area());
 		if area.is_empty() {

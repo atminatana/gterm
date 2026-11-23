@@ -15,6 +15,7 @@ use crate::geometry::Rect;
 use crate::input::{Handled, KeyMsg, Messages, MouseKind, MouseMsg};
 use crate::layout::{Constraint, Layout};
 use crate::style::Style;
+use crate::theme::{Theme, scope};
 use crate::ui::{Modal, Ui};
 use crate::widgets::selection;
 use crate::widgets::{Block, List, ListState, StatefulWidget, Widget};
@@ -139,6 +140,13 @@ impl WidgetEvents for ComboBoxState {
 	}
 }
 
+/// Области выделенного пункта раскрытого списка в теме (ADR-0037).
+const SELECTED_SCOPES: [&str; 3] = [
+	"ui.combo.selected",
+	"ui.list.selected",
+	scope::MENU_SELECTED,
+];
+
 /// Содержимое слоя: список пунктов над выделением `ComboBoxState::list`; держит ссылки на поля
 /// состояния, пока список раскрыт.
 struct DropdownList<'a, M> {
@@ -224,6 +232,10 @@ impl<M> Control<M> for DropdownList<'_, M> {
 }
 
 impl<M> Drawable for DropdownList<'_, M> {
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.highlight_style = theme.first(&SELECTED_SCOPES).patch(self.highlight_style);
+	}
+
 	fn draw(&mut self, area: Rect, buf: &mut ScreenBuffer) {
 		let list = List::new(self.items.iter().copied()).highlight_style(self.highlight_style);
 		StatefulWidget::render(list, area, buf, self.list);
@@ -286,6 +298,27 @@ impl<'a> ComboBox<'a> {
 		self
 	}
 
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Области `ui.combo.*`; в теме без них — области поля ввода, затем меню helix.
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		self.style = theme
+			.first(&["ui.combo", "ui.input", scope::MENU])
+			.patch(self.style);
+		self.focus_style = theme
+			.first(&["ui.combo.focus", "ui.input.focus", scope::TEXT_FOCUS])
+			.patch(self.focus_style);
+		self.highlight_style = theme.first(&SELECTED_SCOPES).patch(self.highlight_style);
+		if let Some(block) = &mut self.block {
+			block.set_theme(theme);
+		}
+	}
+
 	fn draw(
 		&self,
 		area: Rect,
@@ -332,6 +365,10 @@ impl<'a> ComboBox<'a> {
 impl StatefulWidget for ComboBox<'_> {
 	type State = ComboBoxState;
 
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
+
 	fn render(self, area: Rect, buf: &mut ScreenBuffer, state: &mut ComboBoxState) {
 		if let Some(selected) = state.selected {
 			state.selected = Some(selected.min(self.items.len().saturating_sub(1)));
@@ -349,6 +386,10 @@ struct ComboBoxView<'a> {
 }
 
 impl Widget for ComboBoxView<'_> {
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.widget.set_theme(theme);
+	}
+
 	fn render(self, area: Rect, buf: &mut ScreenBuffer) {
 		self.widget
 			.draw(area, buf, self.selected, true, self.focused);

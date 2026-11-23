@@ -18,12 +18,14 @@ pub use modal::Modal;
 use gterm::buffer::ScreenBuffer;
 use gterm::hotkey::HotkeyTracker;
 
+use crate::buffer::BufferExt;
 use crate::clipboard::Clipboard;
 use crate::control::{Control, Drawable, WidgetEvents};
 use crate::geometry::Rect;
 use crate::hotkeys::HotkeyMap;
 use crate::layout::Layout;
 use crate::style::Style;
+use crate::theme::Theme;
 use crate::widgets::{Block, StatefulWidget, Widget};
 
 use element::{Custom, Element, Owned, Stateful, Stateless};
@@ -40,6 +42,8 @@ pub struct Ui<'a, M> {
 	hotkeys: Option<Hotkeys<'a, M>>,
 	/// Буфер обмена приложения для команд правки (ADR-0030).
 	clipboard: Option<&'a mut dyn Clipboard>,
+	/// Тема оформления (ADR-0037): доходит до каждого узла при отрисовке.
+	theme: Option<&'a Theme>,
 }
 
 /// Трекер комбинации из состояния приложения и карта, действующая без модального слоя.
@@ -80,6 +84,7 @@ impl<'a, M: 'a> Ui<'a, M> {
 			modal: None,
 			hotkeys: None,
 			clipboard: None,
+			theme: None,
 		}
 	}
 
@@ -115,6 +120,9 @@ impl<'a, M: 'a> Ui<'a, M> {
 			}
 			if ui.clipboard.is_none() {
 				ui.clipboard = child.clipboard;
+			}
+			if ui.theme.is_none() {
+				ui.theme = child.theme;
 			}
 			let offset = ui.nodes.len();
 			roots.push(offset);
@@ -256,6 +264,15 @@ impl<'a, M: 'a> Ui<'a, M> {
 		self
 	}
 
+	/// Тема оформления (ADR-0037): значение живёт в состоянии приложения. При отрисовке
+	/// область описания получает базовый стиль темы (`ui.text` на `ui.background`), рамки
+	/// контейнеров, виджеты, контролы и модальный слой — стили своих областей; стиль, заданный
+	/// у виджета явно, сильнее темы.
+	pub fn theme(mut self, theme: &'a Theme) -> Self {
+		self.theme = Some(theme);
+		self
+	}
+
 	/// Раздать области: корень — `area`, дети контейнеров — по их раскладке; области записываются
 	/// в состояния контролов для попадания мыши.
 	pub fn layout(&mut self, area: Rect) -> &mut Self {
@@ -296,7 +313,16 @@ impl<'a, M: 'a> Ui<'a, M> {
 	/// внутри), затем контролы и листы в порядке объявления; пустые области пропускаются.
 	/// Модальный слой здесь не рисуется — он идёт в наложение ([`Ui::draw_modal`]). Потребляет
 	/// описание.
-	pub fn render(mut self, area: Rect, buf: &mut ScreenBuffer) {
+	pub fn render(self, area: Rect, buf: &mut ScreenBuffer) {
+		if let Some(theme) = self.theme {
+			buf.set_style(area, theme.base());
+		}
+		self.render_nodes(area, buf);
+	}
+
+	/// Отрисовка узлов без базового стиля области: содержимое модального слоя лежит на фоне
+	/// самого слоя.
+	fn render_nodes(mut self, area: Rect, buf: &mut ScreenBuffer) {
 		// Пока открыт слой, фокус экрана не трогаем (ADR-0026): контрол под фокусом может
 		// отсутствовать в описании (поле раскрытого списка рисуется снимком), и переназначение
 		// отдало бы фокус первому кандидату.
@@ -305,6 +331,7 @@ impl<'a, M: 'a> Ui<'a, M> {
 		}
 		self.layout(area);
 		let inside = self.focus_inside();
+		let theme = self.theme;
 		for ((node, &area), &has_focus) in self.nodes.iter_mut().zip(&self.areas).zip(&inside) {
 			if area.is_empty() {
 				continue;
@@ -316,13 +343,17 @@ impl<'a, M: 'a> Ui<'a, M> {
 					..
 				} => {
 					let mut block = block.clone();
-					if let (true, Some(style)) = (has_focus, *focus_style) {
-						block.patch_border_style(style);
+					if let Some(theme) = theme {
+						block.apply_theme(theme);
+					}
+					if has_focus {
+						let themed = theme.map(Theme::focus_border).unwrap_or_default();
+						block.patch_border_style(themed.patch(focus_style.unwrap_or_default()));
 					}
 					block.render(area, buf);
 				}
 				Kind::Container { .. } => {}
-				Kind::Element(element) => element.render(area, buf),
+				Kind::Element(element) => element.render(area, buf, theme),
 			}
 		}
 	}

@@ -15,6 +15,7 @@ use crate::input::{Handled, KeyMsg, Messages, MouseKind, MouseMsg};
 use crate::layout::{Constraint, Layout};
 use crate::style::Style;
 use crate::text::{StyledLine, Text};
+use crate::theme::{Theme, scope};
 use crate::widgets::scrollbar::BarState;
 use crate::widgets::selection::{self, RowMap};
 use crate::widgets::{Block, Scrollbar, ScrollbarState, StatefulWidget, Widget};
@@ -278,6 +279,36 @@ impl<'a> Table<'a> {
 		self
 	}
 
+	/// Подставить стили темы под заданные явно (ADR-0037) — для виджета вне дерева `Ui`; в
+	/// дереве то же делает [`Ui::theme`](crate::ui::Ui::theme).
+	pub fn themed(mut self, theme: &Theme) -> Self {
+		self.set_theme(theme);
+		self
+	}
+
+	/// Области `ui.table`, `ui.table.header`, `ui.table.selected`; в теме без них выделенная
+	/// строка — как в меню helix. Рамка под фокусом — `ui.window.focus`.
+	pub(crate) fn set_theme(&mut self, theme: &Theme) {
+		self.style = theme.first(&["ui.table"]).patch(self.style);
+		self.highlight_style = theme
+			.first(&["ui.table.selected", scope::MENU_SELECTED])
+			.patch(self.highlight_style);
+		if let Some(header) = &mut self.header {
+			header.style = theme.first(&["ui.table.header"]).patch(header.style);
+		}
+		self.focus_style = Some(
+			theme
+				.focus_border()
+				.patch(self.focus_style.unwrap_or_default()),
+		);
+		if let Some(block) = &mut self.block {
+			block.set_theme(theme);
+		}
+		if let Some(scrollbar) = &mut self.scrollbar {
+			scrollbar.set_theme(theme);
+		}
+	}
+
 	pub fn len(&self) -> usize {
 		self.rows.len()
 	}
@@ -375,6 +406,10 @@ impl<'a> Table<'a> {
 
 impl StatefulWidget for Table<'_> {
 	type State = TableState;
+
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
 
 	fn render(self, area: Rect, buf: &mut ScreenBuffer, state: &mut TableState) {
 		let area = area.intersection(buf.area());
@@ -477,6 +512,10 @@ impl StatefulWidget for Table<'_> {
 }
 
 impl Widget for Table<'_> {
+	fn apply_theme(&mut self, theme: &Theme) {
+		self.set_theme(theme);
+	}
+
 	fn render(self, area: Rect, buf: &mut ScreenBuffer) {
 		let mut state = TableState::default();
 		StatefulWidget::render(self, area, buf, &mut state);

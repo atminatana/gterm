@@ -1,0 +1,16 @@
+# Тема sniffnet «nord_light» в формате helix для gterm-widgets (ADR-0038).
+# Источник: src/gui/styles/custom_themes/nord.rs (sniffnet 1.6.0, MIT OR Apache-2.0) — см. README.md каталога.
+# Заданы только области основы; тона (ui.control*, ui.selection, …) и области виджетов
+# выводятся из них. Любую из них можно задать здесь строкой — она заменит выведенную.
+
+"ui.background" = { bg = "primary" }
+"ui.text" = "text_body"
+"ui.accent" = { fg = "text_headers", bg = "secondary" }
+
+[palette]
+primary = "#ECEFF4"       # фон
+secondary = "#5E81AC"     # акцент: шапка, рамки, входящие соединения
+outgoing = "#B48EAD"      # второй акцент: исходящие соединения
+text_body = "#2E3440"     # текст на фоне
+text_headers = "#ECEFF4"  # текст на акценте
+starred = "#D08770"       # звёздочка избранного
